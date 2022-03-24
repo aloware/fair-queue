@@ -1,0 +1,28 @@
+{
+    "name": "aloware/fair-queue",
+    "description": "Laravel package to provide fair consumption of jobs against multiple partitions.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohsen Akhlaghi",
+            "email": "mohsen@aloware.com"
+        }
+    ],
+    "require": {
+        "php": "^7.1|^8.0",
+        "laravel/framework": "^5.7|^6.0|^7.0|^8.0|^9.0",
+        "illuminate/support": "^5.7|^6.0|^7.0|^8.0|^9.0",
+        "illuminate/queue": "^5.7|^6.0|^7.0|^8.0|^9.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7.0|^8.0|^9.0",
+        "mockery/mockery": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Aloware\\FairQueue\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
