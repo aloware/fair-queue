@@ -2,11 +2,11 @@
 
 namespace Aloware\FairQueue;
 
+use Aloware\FairQueue\Repository\RepositoryInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Redis;
 
 class FairSignalJob implements ShouldQueue
 {
@@ -23,18 +23,12 @@ class FairSignalJob implements ShouldQueue
 
     public function handle()
     {
-        $prefix = config('database.redis.fair-queue.prefix');
+        /** @var RepositoryInterface $repository */
+        $repository = app(RepositoryInterface::class);
 
-        $redis = Redis::connection($prefix);
+        $selectPartition = function () use ($repository) {
 
-        $selectPartition = function () use ($redis, $prefix, &$partitionIndex) {
-            $pattern = sprintf(
-                '*%s:%s:*',
-                $prefix,
-                $this->queue
-            );
-
-            $partitions = $redis->keys($pattern);
+            $partitions = $repository->partitions($this->queue);
 
             if (empty($partitions)) {
                 return 'null';
@@ -42,16 +36,13 @@ class FairSignalJob implements ShouldQueue
 
             $partitionIndex = random_int(0, count($partitions) - 1);
 
-            return substr(
-                $partitions[$partitionIndex],
-                strpos($partitions[$partitionIndex], $prefix.':')
-            );
+            return $partitions[$partitionIndex];
         };
 
         $partition = $selectPartition();
 
         $tries = 0;
-        while (empty($jobSerialized = $redis->lpop($partition))) {
+        while (empty($jobSerialized = $repository->pop($this->queue, $partition))) {
             // maybe this partition has run out of jobs during the
             //  random selection process, so try getting a fresh list
             //  of partitions and pick another one.
@@ -73,16 +64,9 @@ class FairSignalJob implements ShouldQueue
         try {
             $job->handle();
         } catch (\Throwable $e) {
-            // push it to the list to be retried later
+            // push it back to the list to be retried later
 
-            $key = sprintf(
-                '%s:%s:%s',
-                $prefix,
-                $this->queue,
-                $partition
-            );
-
-            $redis->rpush($key, $jobSerialized);
+            $repository->push($this->queue, $partition, $jobSerialized);
 
             throw $e;
         }
@@ -90,18 +74,10 @@ class FairSignalJob implements ShouldQueue
 
     public function addToPartition()
     {
-        $prefix = config('database.redis.fair-queue.prefix');
+        /** @var RepositoryInterface $repository */
+        $repository = app(RepositoryInterface::class);
 
-        $redis = Redis::connection($prefix);
-
-        $key = sprintf(
-            '%s:%s:%s',
-            $prefix,
-            $this->queue,
-            $this->partition
-        );
-
-        $redis->rpush($key, serialize($this->originalJob));
+        $repository->push($this->queue, $this->partition, serialize($this->originalJob));
 
         // avoid unnecessary size allocation
         $this->originalJob = null;

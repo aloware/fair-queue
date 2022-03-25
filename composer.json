@@ -23,6 +23,13 @@
             "Aloware\\FairQueue\\": "src/"
         }
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Aloware\\FairQueue\\FairQueueServiceProvider"
+            ]
+        }
+    },
     "minimum-stability": "dev",
     "prefer-stable": true
 }
