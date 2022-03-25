@@ -15,6 +15,11 @@ class FairQueueServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->mergeConfigFrom(
+            __DIR__ . '/config/fair-queue.php',
+            'database.redis.fair-queue'
+        );
+
         $this->app->singleton(
             RepositoryInterface::class,
             RedisRepository::class
