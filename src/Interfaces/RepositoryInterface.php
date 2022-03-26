@@ -1,6 +1,6 @@
 <?php
 
-namespace Aloware\FairQueue\Repository;
+namespace Aloware\FairQueue\Interfaces;
 
 interface RepositoryInterface
 {
@@ -14,4 +14,11 @@ interface RepositoryInterface
     public function pop($queue, $partition);
 
     public function acknowledge($queue, $partition, $jobId);
+
+    public function queues();
+
+    public function queuesWithPartitions();
+
+    public function partitionsWithCount($queue);
+
 }

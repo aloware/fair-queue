@@ -53,4 +53,5 @@ trait FairDispatchable
 
         return app(Dispatcher::class)->dispatchAfterResponse($job);
     }
+
 }

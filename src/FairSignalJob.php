@@ -2,7 +2,7 @@
 
 namespace Aloware\FairQueue;
 
-use Aloware\FairQueue\Repository\RepositoryInterface;
+use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
