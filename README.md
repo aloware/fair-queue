@@ -16,7 +16,6 @@ to `config/database.php`.
     'redis' => [
         ...
         'fair-queue' => [
-            'url'      => env('FAIR_QUEUE_REDIS_URL'),
             'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
             'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
             'port'     => env('FAIR_QUEUE_REDIS_PORT', 6379),
@@ -52,7 +51,7 @@ chain call and let your queue jobs be consumed fairly between those partitions.
 ExampleJob::dispatch()
     ->onConnection($connection)
     ->onQueue($queue)
-    ->fairConsume("company-$companyId");
+    ->fairConsume($companyId);
 ```
 
 ## License
