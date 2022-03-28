@@ -24,7 +24,6 @@
 
     <div class="container mb-5">
         <div class="d-flex align-items-center py-4 header">
-            <img width="128" src="http://aloware.test/assets/images/logo.png" />
 
             <h4 class="mb-0 ml-2">Fair-Queue</h4>
 
