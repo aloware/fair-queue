@@ -7,24 +7,27 @@ Laravel package to provide fair consumption of jobs against multiple partitions.
 composer require aloware/fair-queue
 ```
 
+## Assets
+Run the command below to publish the package asset files:
+
+```sh
+php artisan vendor:publish --tag=public --force
+```
+
+Run the command below to publish the package config file:
+
+```sh
+php artisan vendor:publish --tag=fairqueue-config --force
+```
+
+
 ## Usage
 This package uses Redis as storage. So you need to add **fair-queue** database configuration
-to `config/database.php`.
+to `config/database.php` and set the redis key name and redis key prefix to your `.env` file:
 
 ```
-...
-    'redis' => [
-        ...
-        'fair-queue' => [
-            'url'      => env('FAIR_QUEUE_REDIS_URL'),
-            'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
-            'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
-            'port'     => env('FAIR_QUEUE_REDIS_PORT', 6379),
-            'database' => env('FAIR_QUEUE_REDIS_DB', 1),
-            'prefix'   => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
-        ],
-    ]
-];
+FAIR_QUEUE_REDIS_DB="fair-queue"
+FAIR_QUEUE_KEY_PREFIX="fair-queue"
 ```
 
 Now, you need to replace `use Dispatchable;` with `use FairDispatchable;` in the Job class you
@@ -53,6 +56,14 @@ ExampleJob::dispatch()
     ->onConnection($connection)
     ->onQueue($queue)
     ->fairConsume("company-$companyId");
+```
+
+## Monitoring
+
+To monitor queue partitions, jobs etc... Go to this route:
+
+```
+https://your.domain/fairqueue/dashboard
 ```
 
 ## License
