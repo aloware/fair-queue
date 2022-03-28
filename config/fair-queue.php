@@ -11,11 +11,25 @@ return [
     | the existing middleware. Or, you can simply stick with this list.
     |
     */
-    'middleware' => ['web', 'horizon'],
+    'middleware' => ['web'],
 
-    'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
-    'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
-    'port'     => env('FAIR_QUEUE_REDIS_PORT', 6379),
-    'database' => env('FAIR_QUEUE_REDIS_DB', 1),
-    'prefix'   => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
+    /*
+    |--------------------------------------------------------------------------
+    | FairQueue Redis DB
+    |--------------------------------------------------------------------------
+    |
+    | If you have a seperated redis connection for fair-queue, you can specify
+    | Redis connection name here
+    */
+    'database'   => env('FAIR_QUEUE_REDIS_DB', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | FairQueue Redis DB
+    |--------------------------------------------------------------------------
+    |
+    | If you want to have a custom redis key prefix for your fair-queue queues
+    | you can set it here
+    */
+    'key_prefix' => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
 ];

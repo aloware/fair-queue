@@ -18,4 +18,28 @@ class QueueMetricsController extends Controller
         return response()->json($partitions);
     }
 
+    /**
+     * Get the paritions of a queue.
+     *
+     * @return array
+     */
+
+    public function partitionJobs($partition)
+    {
+        $jobs = FairQueue::jobs($partition);
+        return response()->json($jobs);
+    }
+
+    /**
+     * Get job payload.
+     *
+     * @return object
+     */
+
+    public function jobPreview($partition, $index)
+    {
+        $job = FairQueue::job($partition, $index);
+        return response()->json($job);
+    }
+
 }

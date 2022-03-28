@@ -22,22 +22,11 @@ php artisan vendor:publish --tag=fairqueue-config --force
 
 
 ## Usage
-This package uses Redis as storage. So you need to add **fair-queue** database configuration
-to `config/database.php`.
+This package uses Redis as data storage. By default it uses `default` redis connection. You may configure it to use another connection within the fair-queue configuration file or by setting in the environment file.
 
 ```
-...
-    'redis' => [
-        ...
-        'fair-queue' => [
-            'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
-            'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
-            'port'     => env('FAIR_QUEUE_REDIS_PORT', 6379),
-            'database' => env('FAIR_QUEUE_REDIS_DB', 1),
-            'prefix'   => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
-        ],
-    ]
-];
+FAIR_QUEUE_REDIS_DB="default"
+FAIR_QUEUE_KEY_PREFIX="fair-queue"
 ```
 
 Now, you need to replace `use Dispatchable;` with `use FairDispatchable;` in the Job class you
