@@ -33,9 +33,10 @@ class FairQueueServiceProvider extends ServiceProvider
     {
         $this->registerRoutes();
         $this->registerResources();
+        $this->publishAssets();
     }
 
-        /**
+    /**
      * Register the FairQueue routes.
      *
      * @return void
@@ -45,7 +46,7 @@ class FairQueueServiceProvider extends ServiceProvider
         Route::group([
             'prefix' => 'fairqueue',
             'namespace' => 'Aloware\FairQueue\Http\Controllers',
-            'middleware' => ['web', 'horizon']
+            'middleware' => config('fair-queue.middleware', 'web'),
         ], function () {
             $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         });
@@ -59,5 +60,19 @@ class FairQueueServiceProvider extends ServiceProvider
     protected function registerResources(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'fairqueue');
+    }
+
+    /**
+     * Publish public assets.
+     */
+    protected function publishAssets()
+    {
+        $this->publishes([
+            __DIR__.'/../config/fair-queue.php' => config_path('fair-queue.php'),
+        ], 'fairqueue-config');
+
+        $this->publishes([
+            realpath(__DIR__.'/../public') => public_path('vendor/fairqueue'),
+        ], 'public');
     }
 }
