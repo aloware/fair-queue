@@ -10,7 +10,7 @@ class RedisRepository implements RepositoryInterface
     public function partitions($queue)
     {
         $prefix = $this->getPrefix();
-        $redis = $this->getConnection($prefix);
+        $redis = $this->getConnection();
 
         $pattern = sprintf(
             '*%s:%s:*',
@@ -28,7 +28,7 @@ class RedisRepository implements RepositoryInterface
     public function queues()
     {
         $prefix = $this->getPrefix();
-        $redis = $this->getConnection($prefix);
+        $redis = $this->getConnection();
 
         $pattern = sprintf(
             '*%s:*',
@@ -59,7 +59,7 @@ class RedisRepository implements RepositoryInterface
     public function partitionsWithCount($queue)
     {
         $prefix = $this->getPrefix();
-        $redis = $this->getConnection($prefix);
+        $redis = $this->getConnection();
 
         $pattern = sprintf(
             '*%s:%s:*',
@@ -77,10 +77,38 @@ class RedisRepository implements RepositoryInterface
         return $partitions;
     }
 
+    public function jobs($partition)
+    {
+        $prefix = $this->getPrefix();
+        $redis = $this->getConnection();
+        $per_page = request('limit', 100);
+
+        $jobs = $redis->lrange($partition, 0, $per_page + 1);
+
+        $jobs_array = [];
+
+        foreach($jobs as $job)
+        {
+            $jobs_array[] = get_class(unserialize($job));
+        }
+
+        return $jobs_array;
+    }
+
+    public function job($partition, $index)
+    {
+        $prefix = $this->getPrefix();
+        $redis = $this->getConnection();
+
+        $jobs = $redis->lrange($partition, $index, $index);
+
+        return $jobs ? $jobs[0] : null;
+    }
+
     public function push($queue, $partition, $job)
     {
         $prefix = $this->getPrefix();
-        $redis = $this->getConnection($prefix);
+        $redis = $this->getConnection();
 
         $key = sprintf(
             '%s:%s:%s',
@@ -95,7 +123,7 @@ class RedisRepository implements RepositoryInterface
     public function pop($queue, $partition)
     {
         $prefix = $this->getPrefix();
-        $redis = $this->getConnection($prefix);
+        $redis = $this->getConnection();
 
         $key = sprintf(
             '%s:%s:%s',
@@ -113,14 +141,15 @@ class RedisRepository implements RepositoryInterface
         //  we can retries jobs.
     }
 
-    private function getConnection($prefix)
+    private function getConnection()
     {
-        return Redis::connection($prefix);
+        $database = config('fair-queue.database');
+        return Redis::connection($database);
     }
 
     private function getPrefix()
     {
-        return config('database.redis.fair-queue.prefix');
+        return config('fair-queue.key_prefix');
     }
 
 }

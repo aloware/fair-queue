@@ -11,11 +11,9 @@ return [
     | the existing middleware. Or, you can simply stick with this list.
     |
     */
-    'middleware' => ['web', 'horizon'],
+    'middleware' => ['web'],
 
-    'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
-    'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
-    'port'     => env('FAIR_QUEUE_REDIS_PORT', 6379),
-    'database' => env('FAIR_QUEUE_REDIS_DB', 1),
-    'prefix'   => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
+    'database'   => env('FAIR_QUEUE_REDIS_DB', 'default'),
+
+    'key_prefix' => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
 ];

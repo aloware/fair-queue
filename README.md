@@ -7,20 +7,6 @@ Laravel package to provide fair consumption of jobs against multiple partitions.
 composer require aloware/fair-queue
 ```
 
-## Assets
-Run the command below to publish the package asset files:
-
-```sh
-php artisan vendor:publish --tag=public --force
-```
-
-Run the command below to publish the package config file:
-
-```sh
-php artisan vendor:publish --tag=fairqueue-config --force
-```
-
-
 ## Usage
 This package uses Redis as storage. So you need to add **fair-queue** database configuration
 to `config/database.php`.
@@ -30,6 +16,7 @@ to `config/database.php`.
     'redis' => [
         ...
         'fair-queue' => [
+            'url'      => env('FAIR_QUEUE_REDIS_URL'),
             'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
             'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
             'port'     => env('FAIR_QUEUE_REDIS_PORT', 6379),
@@ -65,15 +52,7 @@ chain call and let your queue jobs be consumed fairly between those partitions.
 ExampleJob::dispatch()
     ->onConnection($connection)
     ->onQueue($queue)
-    ->fairConsume($companyId);
-```
-
-## Monitoring
-
-To monitor queue partitions, jobs etc... Go to this route:
-
-```
-https://your.domain/fairqueue/dashboard
+    ->fairConsume("company-$companyId");
 ```
 
 ## License

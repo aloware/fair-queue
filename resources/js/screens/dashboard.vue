@@ -171,16 +171,6 @@
                         </div>
                     </div>
 
-                    <div class="w-25 border-right border-bottom">
-                        <div class="p-4">
-                            <small class="text-uppercase">Total Failed Jobs</small>
-
-                            <h4 class="mt-4 mb-0">
-                                {{ stats.failedJobs ? stats.failedJobs.toLocaleString() : 0 }}
-                            </h4>
-                        </div>
-                    </div>
-
                     <div class="w-25 border-bottom">
                         <div class="p-4">
                             <small class="text-uppercase">Status</small>

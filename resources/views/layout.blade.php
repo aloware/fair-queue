@@ -5,13 +5,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="shortcut icon" href="{{ asset('/vendor/fairqueue/img/favicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('/vendor/fairqueue/public/img/favicon.png') }}">
 
     <title>FairQueue{{ config('app.name') ? ' - ' . config('app.name') : '' }}</title>
 
     <!-- Style sheets-->
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-    <link href="{{ asset(mix($cssFile, 'vendor/fairqueue')) }}" rel="stylesheet">
+    <link href="{{ asset(mix($cssFile, 'vendor/fairqueue/public')) }}" rel="stylesheet">
 </head>
 <body>
 <div id="horizon" v-cloak>
@@ -28,11 +28,6 @@
 
             <h4 class="mb-0 ml-2">Fair-Queue</h4>
 
-            <button class="btn btn-outline-primary ml-auto" :class="{active: autoLoadsNewEntries}" v-on:click.prevent="autoLoadNewEntries" title="Auto Load Entries">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="icon fill-primary">
-                    <path d="M10 3v2a5 5 0 0 0-3.54 8.54l-1.41 1.41A7 7 0 0 1 10 3zm4.95 2.05A7 7 0 0 1 10 17v-2a5 5 0 0 0 3.54-8.54l1.41-1.41zM10 20l-4-4 4-4v8zm0-12V0l4 4-4 4z"></path>
-                </svg>
-            </button>
         </div>
 
         <div class="row mt-4">
@@ -69,6 +64,6 @@
     window.Horizon = @json($horizonScriptVariables);
 </script>
 
-<script src="{{asset(mix('app.js', 'vendor/fairqueue'))}}"></script>
+<script src="{{asset(mix('app.js', 'vendor/fairqueue/public'))}}"></script>
 </body>
 </html>

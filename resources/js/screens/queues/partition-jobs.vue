@@ -22,11 +22,10 @@
          * Prepare the component.
          */
         mounted() {
-            document.title = "Horizon - Monitoring";
+            document.title = "FairQueue - Monitoring";
 
-            this.loadPartitions(this.$route.params.queue);
+            this.loadJobs(this.$route.params.partition);
 
-            // this.refreshJobsPeriodically();
         },
 
 
@@ -45,26 +44,26 @@
             '$route'() {
                 this.page = 1;
 
-                this.loadPartitions(this.$route.params.queue);
+                this.loadJobs(this.$route.params.partition);
             }
         },
 
 
         methods: {
             /**
-             * Load the partitions of the given queue.
+             * Load the jobs of of the given partition.
              */
-            loadPartitions(queue, starting = 0, refreshing = false) {
+            loadJobs(partition, starting = 0, refreshing = false) {
                 if (!refreshing) {
                     this.ready = false;
                 }
 
-                this.$http.get(Horizon.basePath + '/api/queues/' + encodeURIComponent(queue) + '/partitions?limit=' + this.perPage)
+                this.$http.get(Horizon.basePath + '/api/partitions/' + encodeURIComponent(partition) + '/jobs?limit=' + this.perPage)
                     .then(response => {
-                        if (!this.$root.autoLoadsNewEntries && refreshing && this.partitions.length && _.first(response.data).id !== _.first(this.partitions).id) {
+                        if (!this.$root.autoLoadsNewEntries && refreshing && this.jobs.length && _.first(response.data).id !== _.first(this.jobs).id) {
                             this.hasNewEntries = true;
                         } else {
-                            this.partitions = response.data;
+                            this.jobs = response.data;
 
                             this.totalPages = Math.ceil(response.data.total / this.perPage);
                         }
@@ -141,15 +140,14 @@
         </div>
 
 
-        <div v-if="ready && partitions.length == 0" class="d-flex flex-column align-items-center justify-content-center card-bg-secondary p-5 bottom-radius">
+        <div v-if="ready && jobs.length == 0" class="d-flex flex-column align-items-center justify-content-center card-bg-secondary p-5 bottom-radius">
             <span>There aren't any jobs for this partition.</span>
         </div>
 
-        <table v-if="ready && partitions.length > 0" class="table table-hover table-sm mb-0">
+        <table v-if="ready && jobs.length > 0" class="table table-hover table-sm mb-0">
             <thead>
             <tr>
-                <th>Partition Name</th>
-                <th>Number Of Jobs</th>
+                <th>Job</th>
             </tr>
             </thead>
 
@@ -162,23 +160,16 @@
                 </td>
             </tr>
 
-            <tr v-for="partition in partitions" :key="partition.name">
+            <tr v-for="(job, index) in jobs" :key="index">
                 <td>
-                    <router-link :title="partition.name" :to="{ name: 'failed-jobs-preview', params: { jobId: partition.name }}">
-                        {{ jobBaseName(partition.name) }}
+                    <router-link :title="job" :to="{ name: 'job-preview', params: { jobIndex: index }}">
+                        {{ job }}
                     </router-link>
-                </td>
-                <td>
-                    <span>{{ partition.count }}</span>
                 </td>
             </tr>
             </tbody>
         </table>
 
-        <div v-if="ready && partitions.length" class="p-3 d-flex justify-content-between border-top">
-            <button @click="previous" class="btn btn-secondary btn-md" :disabled="page==1">Previous</button>
-            <button @click="next" class="btn btn-secondary btn-md" :disabled="page>=totalPages">Next</button>
-        </div>
     </div>
 
 </template>

@@ -32,6 +32,12 @@ export default [
         component: require('./screens/queues/partition-jobs').default,
     },
 
+    {
+        path: '/partitions/:partition/jobs/:jobIndex',
+        name: 'job-preview',
+        component: require('./screens/queues/job-preview').default,
+    },
+
     { path: '/metrics', redirect: '/metrics/jobs' },
 
     {
@@ -57,27 +63,4 @@ export default [
         component: require('./screens/metrics/preview').default,
     },
 
-    {
-        path: '/recent-jobs',
-        name: 'recent-jobs',
-        component: require('./screens/recentJobs/index').default,
-    },
-
-    {
-        path: '/recent-jobs/:jobId',
-        name: 'recent-jobs-preview',
-        component: require('./screens/recentJobs/job').default,
-    },
-
-    {
-        path: '/failed',
-        name: 'failed-jobs',
-        component: require('./screens/failedJobs/index').default,
-    },
-
-    {
-        path: '/failed/:jobId',
-        name: 'failed-jobs-preview',
-        component: require('./screens/failedJobs/job').default,
-    },
 ];

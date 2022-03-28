@@ -22,7 +22,7 @@
          * Prepare the component.
          */
         mounted() {
-            document.title = "Horizon - Monitoring";
+            document.title = "FairQueue - Monitoring";
 
             this.loadPartitions(this.$route.params.queue);
 
@@ -59,7 +59,7 @@
                     this.ready = false;
                 }
 
-                this.$http.get(Horizon.basePath + '/api/queues/' + encodeURIComponent(queue) + '/partitions?limit=' + this.perPage)
+                this.$http.get(Horizon.basePath + '/api/queues/' + encodeURIComponent(queue) + '/partitions?starting_at='+ starting +'&limit=' + this.perPage)
                     .then(response => {
                         if (!this.$root.autoLoadsNewEntries && refreshing && this.partitions.length && _.first(response.data).id !== _.first(this.partitions).id) {
                             this.hasNewEntries = true;
@@ -175,10 +175,6 @@
             </tbody>
         </table>
 
-        <div v-if="ready && partitions.length" class="p-3 d-flex justify-content-between border-top">
-            <button @click="previous" class="btn btn-secondary btn-md" :disabled="page==1">Previous</button>
-            <button @click="next" class="btn btn-secondary btn-md" :disabled="page>=totalPages">Next</button>
-        </div>
     </div>
 
 </template>
