@@ -5,13 +5,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <link rel="shortcut icon" href="{{ asset('/vendor/fairqueue/public/img/favicon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('/vendor/fairqueue/img/favicon.png') }}">
 
     <title>FairQueue{{ config('app.name') ? ' - ' . config('app.name') : '' }}</title>
 
     <!-- Style sheets-->
     <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-    <link href="{{ asset(mix($cssFile, 'vendor/fairqueue/public')) }}" rel="stylesheet">
+    <link href="{{ asset(mix($cssFile, 'vendor/fairqueue')) }}" rel="stylesheet">
 </head>
 <body>
 <div id="horizon" v-cloak>
@@ -24,7 +24,6 @@
 
     <div class="container mb-5">
         <div class="d-flex align-items-center py-4 header">
-            <img width="128" src="http://aloware.test/assets/images/logo.png" />
 
             <h4 class="mb-0 ml-2">Fair-Queue</h4>
 
@@ -64,6 +63,6 @@
     window.Horizon = @json($horizonScriptVariables);
 </script>
 
-<script src="{{asset(mix('app.js', 'vendor/fairqueue/public'))}}"></script>
+<script src="{{asset(mix('app.js', 'vendor/fairqueue'))}}"></script>
 </body>
 </html>
