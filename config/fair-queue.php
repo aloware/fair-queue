@@ -11,7 +11,7 @@ return [
     | the existing middleware. Or, you can simply stick with this list.
     |
     */
-    'middleware' => ['web'],
+    'middleware' => ['web', 'horizon'],
 
     'host'     => env('FAIR_QUEUE_REDIS_HOST', '127.0.0.1'),
     'password' => env('FAIR_QUEUE_REDIS_PASSWORD', null),
