@@ -54,7 +54,7 @@ chain call and let your queue jobs be consumed fairly between those partitions.
 ExampleJob::dispatch()
     ->onConnection($connection)
     ->onQueue($queue)
-    ->fairConsume("company-$companyId");
+    ->fairConsume($companyId);
 ```
 
 ## Monitoring
