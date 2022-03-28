@@ -22,11 +22,10 @@ php artisan vendor:publish --tag=fairqueue-config --force
 
 
 ## Usage
-This package uses Redis as storage. So you need to add **fair-queue** database configuration
-to `config/database.php` and set the redis key name and redis key prefix to your `.env` file:
+This package uses Redis as data storage. By default it uses `default` redis connection. You may configure it to use another connection within the fair-queue configuration file or by setting in the environment file.
 
 ```
-FAIR_QUEUE_REDIS_DB="fair-queue"
+FAIR_QUEUE_REDIS_DB="default"
 FAIR_QUEUE_KEY_PREFIX="fair-queue"
 ```
 
