@@ -2,8 +2,8 @@ import moment from 'moment-timezone';
 
 export default {
     computed: {
-        Horizon() {
-            return Horizon;
+        FairQueue() {
+            return FairQueue;
         },
     },
 

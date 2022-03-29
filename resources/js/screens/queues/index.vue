@@ -29,7 +29,7 @@
             loadQueues() {
                 this.ready = false;
 
-                this.$http.get(Horizon.basePath + '/api/monitoring')
+                this.$http.get(FairQueue.basePath + '/api/monitoring')
                     .then(response => {
                         this.queues = response.data;
 

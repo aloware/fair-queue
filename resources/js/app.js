@@ -25,13 +25,13 @@ Vue.use(VueRouter);
 
 Vue.prototype.$http = axios.create();
 
-window.Horizon.basePath = '/' + window.Horizon.path;
+window.FairQueue.basePath = '/' + window.FairQueue.path;
 
-let routerBasePath = window.Horizon.basePath + '/';
+let routerBasePath = window.FairQueue.basePath + '/';
 
-if (window.Horizon.path === '' || window.Horizon.path === '/') {
+if (window.FairQueue.path === '' || window.FairQueue.path === '/') {
     routerBasePath = '/';
-    window.Horizon.basePath = '';
+    window.FairQueue.basePath = '';
 }
 
 const router = new VueRouter({
@@ -54,7 +54,7 @@ Vue.directive('tooltip', function(el, binding) {
 });
 
 new Vue({
-    el: '#horizon',
+    el: '#fair-queue',
 
     router,
 
