@@ -52,7 +52,7 @@
             loadJob(id) {
                 this.ready = false;
 
-                this.$http.get(FairQueue.basePath + '/api/partitions/' + encodeURIComponent(this.$route.params.partition) + '/jobs/' + id)
+                this.$http.get(FairQueue.basePath + '/api/queues/' + this.$route.params.queue + '/partitions/' + encodeURIComponent(this.$route.params.partition) + '/jobs/' + id)
                     .then(response => {
                         this.job = response.data;
 

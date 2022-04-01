@@ -122,7 +122,7 @@
 
             <tr v-for="partition in partitions" :key="partition.name">
                 <td>
-                    <router-link :title="partition.name" :to="{ name: 'partition-jobs', params: { partition: partition.name }}">
+                    <router-link :title="partition.name" :to="{ name: 'partition-jobs', params: { partition: partition.name, queue: $route.params.queue }}">
                         {{ jobBaseName(partition.name) }}
                     </router-link>
                 </td>

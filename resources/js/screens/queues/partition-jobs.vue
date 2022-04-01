@@ -57,7 +57,7 @@
                     this.ready = false;
                 }
 
-                this.$http.get(FairQueue.basePath + '/api/partitions/' + encodeURIComponent(partition) + '/jobs?starting_at=' + starting + '&limit=' + this.perPage)
+                this.$http.get(FairQueue.basePath + '/api/queues/' + this.$route.params.queue +'/partitions/' + encodeURIComponent(partition) + '/jobs?starting_at=' + starting + '&limit=' + this.perPage)
                     .then(response => {
                         if (!this.$root.autoLoadsNewEntries && refreshing && this.jobs.length && _.first(response.data).id !== _.first(this.jobs).id) {
                             this.hasNewEntries = true;
@@ -149,7 +149,7 @@
             </tr>
             <tr v-for="job in jobs" :key="job.id">
                 <td>
-                    <router-link :title="job.name" :to="{ name: 'job-preview', params: {  partition: $route.params.partition, jobId: job.id }}">
+                    <router-link :title="job.name" :to="{ name: 'job-preview', params: {  queue: $route.params.queue, partition: $route.params.partition, jobId: job.id }}">
                         {{ job.name }}
                     </router-link>
                 </td>

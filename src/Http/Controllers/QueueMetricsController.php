@@ -3,6 +3,7 @@
 namespace Aloware\FairQueue\Http\Controllers;
 
 use Aloware\FairQueue\Facades\FairQueue;
+use Aloware\FairQueue\Http\Requests\PartitionJobsRequest;
 
 class QueueMetricsController extends Controller
 {
@@ -24,9 +25,9 @@ class QueueMetricsController extends Controller
      * @return array
      */
 
-    public function partitionJobs($partition)
+    public function partitionJobs(PartitionJobsRequest $request, $queue, $partition)
     {
-        $jobs = FairQueue::jobs($partition);
+        $jobs = FairQueue::jobs($queue, $partition);
         return response()->json($jobs);
     }
 
@@ -36,9 +37,9 @@ class QueueMetricsController extends Controller
      * @return object
      */
 
-    public function jobPreview($partition, $index)
+    public function jobPreview($queue, $partition, $index)
     {
-        $job = FairQueue::job($partition, $index);
+        $job = FairQueue::job($queue, $partition, $index);
         return response()->json($job);
     }
 
