@@ -29,7 +29,7 @@
             loadJobs() {
                 this.ready = false;
 
-                this.$http.get(Horizon.basePath + '/api/metrics/jobs')
+                this.$http.get(FairQueue.basePath + '/api/metrics/jobs')
                     .then(response => {
                         this.jobs = response.data;
 

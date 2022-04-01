@@ -59,7 +59,7 @@
                     this.ready = false;
                 }
 
-                this.$http.get(Horizon.basePath + '/api/queues/' + encodeURIComponent(queue) + '/partitions?starting_at='+ starting +'&limit=' + this.perPage)
+                this.$http.get(FairQueue.basePath + '/api/queues/' + encodeURIComponent(queue) + '/partitions?starting_at='+ starting +'&limit=' + this.perPage)
                     .then(response => {
                         if (!this.$root.autoLoadsNewEntries && refreshing && this.partitions.length && _.first(response.data).id !== _.first(this.partitions).id) {
                             this.hasNewEntries = true;

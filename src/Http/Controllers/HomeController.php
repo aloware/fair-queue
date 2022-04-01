@@ -13,7 +13,7 @@ class HomeController extends Controller
     {
         return view('fairqueue::layout', [
             'cssFile' => 'app.css',
-            'horizonScriptVariables' => ['path' => 'fairqueue']
+            'fairqueueScriptVariables' => ['path' => 'fairqueue']
         ]);
     }
 
