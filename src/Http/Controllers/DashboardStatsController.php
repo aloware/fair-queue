@@ -14,12 +14,11 @@ class DashboardStatsController extends Controller
     public function index()
     {
         $queues = FairQueue::queues();
+        $totalJobs = FairQueue::totalJobsCount($queues);
 
         return response()->json([
-            'totalJobs'  => '-',
+            'totalJobs'  => $totalJobs,
             'totalQueues' => count($queues),
-            'failedJobs' => 0,
-            'status' => 'running'
         ]);
     }
 

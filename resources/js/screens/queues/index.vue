@@ -6,6 +6,11 @@
         data() {
             return {
                 ready: false,
+                page: 1,
+                perPage: 50,
+                hasNewEntries: false,
+                loadingNewEntries: false,
+                totalPages: 10,
                 queues: []
             };
         },
@@ -26,17 +31,16 @@
             /**
              * Load the monitored queues.
              */
-            loadQueues() {
+            loadQueues(starting = 0) {
                 this.ready = false;
 
-                this.$http.get(FairQueue.basePath + '/api/monitoring')
+                this.$http.get(FairQueue.basePath + '/api/monitoring?starting_at=' + starting + '&limit=' + this.perPage)
                     .then(response => {
                         this.queues = response.data;
 
                         this.ready = true;
                     });
             },
-
         }
     }
 </script>
