@@ -21,13 +21,7 @@ export default [
                 path: 'partitions',
                 name: 'queue-partitions',
                 component: require('./screens/queues/queue-partitions').default
-            },
-            // {
-            //     path: 'partitions:partition/jobs',
-            //     name: 'partition-jobs',
-            //     component: require('./screens/queues/partition-jobs').default
-            // }
-
+            }
         ],
     },
 
