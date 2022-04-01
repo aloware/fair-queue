@@ -21,8 +21,8 @@ Route::prefix('api')->group(function () {
 
     // Queue Metric Routes...
     Route::get('/queues/{queue}/partitions', 'QueueMetricsController@queuePartitions')->name('fairqueue.queues-partitions.index');
-    Route::get('/partitions/{partition}/jobs', 'QueueMetricsController@partitionJobs')->name('fairqueue.partitions-jobs.index');
-    Route::get('/partitions/{partition}/jobs/{index}', 'QueueMetricsController@jobPreview')->name('fairqueue.job-preview.index');
+    Route::get('/queues/{queue}/partitions/{partition}/jobs', 'QueueMetricsController@partitionJobs')->name('fairqueue.partitions-jobs.index');
+    Route::get('/queues/{queue}/partitions/{partition}/jobs/{index}', 'QueueMetricsController@jobPreview')->name('fairqueue.job-preview.index');
     Route::get('/metrics/queues', 'QueueMetricsController@index')->name('fairqueue.queues-metrics.index');
     Route::get('/metrics/queues/{id}', 'QueueMetricsController@show')->name('fairqueue.queues-metrics.show');
 

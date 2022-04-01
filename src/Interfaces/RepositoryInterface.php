@@ -21,6 +21,10 @@ interface RepositoryInterface
 
     public function partitionsWithCount($queue);
 
-    public function jobs($partition);
+    public function jobs($queue, $partition);
+
+    public function job($queue, $partition, $index);
+
+    public function totalJobsCount($queues);
 
 }

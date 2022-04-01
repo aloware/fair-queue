@@ -26,7 +26,7 @@
 
             this.loadPartitions(this.$route.params.queue);
 
-            // this.refreshJobsPeriodically();
+            this.refreshJobsPeriodically();
         },
 
 
@@ -73,19 +73,6 @@
                     });
             },
 
-
-            /**
-             * Load new entries.
-             */
-            loadNewEntries() {
-                this.jobs = [];
-
-                this.loadJobs(this.$route.params.tag, 0, false);
-
-                this.hasNewEntries = false;
-            },
-
-
             /**
              * Refresh the jobs every period of time.
              */
@@ -94,38 +81,9 @@
                     if (this.page != 1) {
                         return;
                     }
-
-                    this.loadJobs(this.$route.params.tag, 0, true);
+                    this.loadPartitions(this.$route.params.queue, 0, true);
                 }, 3000);
             },
-
-
-            /**
-             * Load the jobs for the previous page.
-             */
-            previous() {
-                this.loadJobs(this.$route.params.tag,
-                    (this.page - 2) * this.perPage
-                );
-
-                this.page -= 1;
-
-                this.hasNewEntries = false;
-            },
-
-
-            /**
-             * Load the jobs for the next page.
-             */
-            next() {
-                this.loadJobs(this.$route.params.tag,
-                    this.page * this.perPage
-                );
-
-                this.page += 1;
-
-                this.hasNewEntries = false;
-            }
         }
     }
 </script>
@@ -164,7 +122,7 @@
 
             <tr v-for="partition in partitions" :key="partition.name">
                 <td>
-                    <router-link :title="partition.name" :to="{ name: 'partition-jobs', params: { partition: partition.name }}">
+                    <router-link :title="partition.name" :to="{ name: 'partition-jobs', params: { partition: partition.name, queue: $route.params.queue }}">
                         {{ jobBaseName(partition.name) }}
                     </router-link>
                 </td>

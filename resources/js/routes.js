@@ -22,18 +22,17 @@ export default [
                 name: 'queue-partitions',
                 component: require('./screens/queues/queue-partitions').default
             }
-
         ],
     },
 
     {
-        path: '/partitions/:partition/jobs',
+        path: '/queues/:queue/partitions/:partition/jobs',
         name: 'partition-jobs',
         component: require('./screens/queues/partition-jobs').default,
     },
 
     {
-        path: '/partitions/:partition/jobs/:jobIndex',
+        path: '/queues/:queue/partitions/:partition/jobs/:jobId',
         name: 'job-preview',
         component: require('./screens/queues/job-preview').default,
     },

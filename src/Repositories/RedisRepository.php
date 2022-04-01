@@ -70,39 +70,83 @@ class RedisRepository implements RepositoryInterface
         $partitions = [];
 
         foreach($keys as $key=>$value) {
-            $partitions[$key]['name'] = $value;
+            $partitions[$key]['name'] = explode(':', $value)[2];
             $partitions[$key]['count'] = $redis->llen($value);
         }
 
         return $partitions;
     }
 
-    public function jobs($partition)
+    public function totalJobsCount($queues)
     {
         $prefix = $this->getPrefix();
         $redis = $this->getConnection();
-        $per_page = request('limit', 100);
 
-        $jobs = $redis->lrange($partition, 0, $per_page + 1);
+        $jobs_count = 0;
+
+        foreach($queues as $queue) {
+            foreach($this->partitions($queue) as $partition) {
+                $jobs_count += $redis->llen("{$prefix}:{$queue}:{$partition}");
+            }
+        }
+        return $jobs_count;
+    }
+
+    public function jobs($queue, $partition)
+    {
+        $prefix = $this->getPrefix();
+        $redis = $this->getConnection();
+        $per_page = request('limit', 25);
+        $starting_at = request('starting_at', 0);
+
+        $pattern = sprintf(
+            '%s:%s:%s',
+            $prefix,
+            $queue,
+            $partition,
+        );
+
+        $jobs = $redis->lrange($pattern, $starting_at, $per_page + $starting_at);
+        $jobs_total_pages = ceil(count($redis->lrange($pattern, 0, -1)) / $per_page);
 
         $jobs_array = [];
 
-        foreach($jobs as $job)
+        foreach($jobs as $index => $job)
         {
-            $jobs_array[] = get_class(unserialize($job));
+            $jobs_array[$index]['id'] = ($index + $starting_at);
+            $jobs_array[$index]['name'] = get_class(unserialize($job));
         }
 
-        return $jobs_array;
+        $has_more = count($jobs) > $per_page;
+
+        if($has_more) {
+            array_pop($jobs_array);
+        }
+
+        return [
+            'jobs'    => $jobs_array,
+            'has_more' => $has_more,
+            'total' => $jobs_total_pages
+        ];
     }
 
-    public function job($partition, $index)
+    public function job($queue, $partition, $index)
     {
         $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $jobs = $redis->lrange($partition, $index, $index);
+        $pattern = sprintf(
+            '%s:%s:%s',
+            $prefix,
+            $queue,
+            $partition,
+        );
 
-        return $jobs ? $jobs[0] : null;
+        $jobs = $redis->lrange($pattern, $index, $index);
+
+        $job = $jobs ? $jobs[0] : null;
+
+        return $job;
     }
 
     public function push($queue, $partition, $job)
