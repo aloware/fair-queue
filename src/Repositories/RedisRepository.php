@@ -18,10 +18,10 @@ class RedisRepository implements RepositoryInterface
             $queue
         );
 
-        return array_map(function ($item) use ($prefix, $queue) {
-            $removablePrefix = $prefix . ':' . $queue . ':';
-            $pos = strpos($item, $removablePrefix);
-            return substr($item, $pos + strlen($removablePrefix));
+        $removablePrefix = $prefix . ':' . $queue . ':';
+
+        return array_map(function ($item) use ($removablePrefix) {
+            return $this->removePrefix($removablePrefix, $item);
         }, $redis->keys($pattern));
     }
 
@@ -36,11 +36,10 @@ class RedisRepository implements RepositoryInterface
         );
 
         $queues = array_map(function ($item) use ($prefix) {
-            $removablePrefix = $prefix . ':';
-            $pos = strpos($item, $removablePrefix);
-            $rep = substr($item, $pos + strlen($removablePrefix));
+            $rep = $this->removePrefix($prefix . ':', $item);
             return explode(':', $rep)[0];
         }, $redis->keys($pattern));
+
         return array_values(array_unique($queues));
     }
 
@@ -48,7 +47,7 @@ class RedisRepository implements RepositoryInterface
     {
         $queues = [];
 
-        foreach($this->queues() as $key=>$queue) {
+        foreach ($this->queues() as $key => $queue) {
             $queues[$key]['queue'] = $queue;
             $queues[$key]['count'] = count($this->partitions($queue));
         }
@@ -66,12 +65,15 @@ class RedisRepository implements RepositoryInterface
             $prefix,
             $queue
         );
+
         $keys = $redis->keys($pattern);
         $partitions = [];
 
-        foreach($keys as $key=>$value) {
-            $partitions[$key]['name'] = explode(':', $value)[2];
-            $partitions[$key]['count'] = $redis->llen($value);
+        foreach ($keys as $key => $value) {
+            $partition = $this->removeBeforePrefix($prefix, $value);
+
+            $partitions[$key]['name'] = explode(':', $partition)[2];
+            $partitions[$key]['count'] = $redis->llen($partition);
         }
 
         return $partitions;
@@ -82,51 +84,51 @@ class RedisRepository implements RepositoryInterface
         $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $jobs_count = 0;
+        $jobsCount = 0;
 
-        foreach($queues as $queue) {
-            foreach($this->partitions($queue) as $partition) {
-                $jobs_count += $redis->llen("{$prefix}:{$queue}:{$partition}");
+        foreach ($queues as $queue) {
+            foreach ($this->partitions($queue) as $partition) {
+                $jobsCount += $redis->llen("{$prefix}:{$queue}:{$partition}");
             }
         }
-        return $jobs_count;
+
+        return $jobsCount;
     }
 
     public function jobs($queue, $partition)
     {
         $prefix = $this->getPrefix();
         $redis = $this->getConnection();
-        $per_page = request('limit', 25);
-        $starting_at = request('starting_at', 0);
+        $perPage = request('limit', 25);
+        $startingAt = request('starting_at', 0);
 
         $pattern = sprintf(
             '%s:%s:%s',
             $prefix,
             $queue,
-            $partition,
+            $partition
         );
 
-        $jobs = $redis->lrange($pattern, $starting_at, $per_page + $starting_at);
-        $jobs_total_pages = ceil(count($redis->lrange($pattern, 0, -1)) / $per_page);
+        $jobs = $redis->lrange($pattern, $startingAt, $perPage + $startingAt);
+        $jobsTotalPages = ceil(count($redis->lrange($pattern, 0, -1)) / $perPage);
 
-        $jobs_array = [];
+        $jobsArray = [];
 
-        foreach($jobs as $index => $job)
-        {
-            $jobs_array[$index]['id'] = ($index + $starting_at);
-            $jobs_array[$index]['name'] = get_class(unserialize($job));
+        foreach ($jobs as $index => $job) {
+            $jobsArray[$index]['id'] = ($index + $startingAt);
+            $jobsArray[$index]['name'] = get_class(unserialize($job));
         }
 
-        $has_more = count($jobs) > $per_page;
+        $hasMore = count($jobs) > $perPage;
 
-        if($has_more) {
-            array_pop($jobs_array);
+        if ($hasMore) {
+            array_pop($jobsArray);
         }
 
         return [
-            'jobs'    => $jobs_array,
-            'has_more' => $has_more,
-            'total' => $jobs_total_pages
+            'jobs'     => $jobsArray,
+            'has_more' => $hasMore,
+            'total'    => $jobsTotalPages
         ];
     }
 
@@ -183,6 +185,19 @@ class RedisRepository implements RepositoryInterface
     {
         // TODO: we should secure retrievals so in case of service crashes
         //  we can retries jobs.
+    }
+
+    private function removeBeforePrefix($prefix, $value)
+    {
+        $removablePrefix = $prefix . ':';
+        $pos = strpos($value, $removablePrefix);
+        return substr($value, $pos);
+    }
+
+    private function removePrefix($prefix, $value)
+    {
+        $pos = strpos($value, $prefix);
+        return substr($value, $pos + strlen($prefix));
     }
 
     private function getConnection()
