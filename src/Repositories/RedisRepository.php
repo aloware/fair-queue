@@ -70,10 +70,15 @@ class RedisRepository implements RepositoryInterface
         $partitions = [];
 
         foreach ($keys as $key => $value) {
-            $partition = $this->removeBeforePrefix($prefix, $value);
+            $partition = $this->removePrefix($prefix . ':', $value);
 
-            $partitions[$key]['name'] = explode(':', $partition)[2];
-            $partitions[$key]['count'] = $redis->llen($partition);
+            $persecKey = $prefix . '-internal:' . $partition . ':persec';
+
+            list ($lastAccess, $lastPersec) = explode(',', $redis->get($persecKey) ?? '0,0');
+
+            $partitions[$key]['name'] = explode(':', $partition)[1];
+            $partitions[$key]['count'] = $redis->llen($prefix . ':' . $partition) ?: 0;
+            $partitions[$key]['per_second'] = $lastPersec;
         }
 
         return $partitions;
@@ -141,14 +146,12 @@ class RedisRepository implements RepositoryInterface
             '%s:%s:%s',
             $prefix,
             $queue,
-            $partition,
+            $partition
         );
 
         $jobs = $redis->lrange($pattern, $index, $index);
 
-        $job = $jobs ? $jobs[0] : null;
-
-        return $job;
+        return $jobs ? $jobs[0] : null;
     }
 
     public function push($queue, $partition, $job)
@@ -177,6 +180,35 @@ class RedisRepository implements RepositoryInterface
             $queue,
             $partition
         );
+
+        $processedKey = sprintf(
+            '%s-internal:%s:%s:processed',
+            $prefix,
+            $queue,
+            $partition
+        );
+
+        $persecKey = sprintf(
+            '%s-internal:%s:%s:persec',
+            $prefix,
+            $queue,
+            $partition
+        );
+
+        $redis->incr($processedKey);
+        $redis->expire($processedKey, 3);
+
+        $now = time();
+        list ($lastAccess, $lastPersec) = explode(',', $redis->get($persecKey) ?? ($now - 1) . ',0');
+
+        if ($now - $lastAccess >= 1) {
+            $persec = max($redis->get($processedKey) ?? 0, 0);
+
+            $data = $now . ',' . max($persec, $persec - $lastPersec);
+            $redis->set($persecKey, $data, 'EX', 3);
+
+            $redis->decrBy($processedKey, $persec);
+        }
 
         return $redis->lpop($key);
     }
