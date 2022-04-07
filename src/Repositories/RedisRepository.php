@@ -9,20 +9,12 @@ class RedisRepository implements RepositoryInterface
 {
     public function partitions($queue)
     {
-        $prefix = $this->getPrefix();
-        $redis = $this->getConnection();
+        return $this->partitionsPrivate($queue);
+    }
 
-        $pattern = sprintf(
-            '*%s:%s:*',
-            $prefix,
-            $queue
-        );
-
-        $removablePrefix = $prefix . ':' . $queue . ':';
-
-        return array_map(function ($item) use ($removablePrefix) {
-            return $this->removePrefix($removablePrefix, $item);
-        }, $redis->keys($pattern));
+    public function failedPartitions($queue)
+    {
+        return $this->partitionsPrivate($queue, '-failed');
     }
 
     public function queues()
@@ -171,11 +163,11 @@ class RedisRepository implements RepositoryInterface
 
     public function pushFailed($queue, $partition, $job)
     {
-        $prefix = $this->getPrefix();
+        $prefix = $this->getPrefix() . '-failed';
         $redis = $this->getConnection();
 
         $key = sprintf(
-            '%s-failed:%s:%s',
+            '%s:%s:%s',
             $prefix,
             $queue,
             $partition
@@ -186,27 +178,44 @@ class RedisRepository implements RepositoryInterface
 
     public function pop($queue, $partition)
     {
-        $prefix = $this->getPrefix();
-
-        return $this->popPrivate($prefix, $queue, $partition);
+        return $this->popPrivate($queue, $partition, '');
     }
 
     public function popFailed($queue, $partition)
     {
-        $prefix = $this->getPrefix() . '-failed';
-
-        return $this->popPrivate($prefix, $queue, $partition);
+        return $this->popPrivate($queue, $partition, '-failed');
     }
 
-    public function expectAcknowledge($connection, $queue, $partition, $job, $wait = 60)
+    public function expectAcknowledge($connection, $queue, $partition, $jobUuid, $job, $wait = 60)
     {
-        // TODO: Implement expectAcknowledge() method.
+        $prefix = $this->getPrefix() . '-inprogress';
+        $redis = $this->getConnection();
+
+        $key = sprintf(
+            '%s:%s:%s:%s',
+            $prefix,
+            $queue,
+            $partition,
+            $jobUuid
+        );
+
+        $redis->set($key, $job);
     }
 
     public function acknowledge($connection, $queue, $partition, $jobUuid)
     {
-        // TODO: we should secure retrievals so in case of service crashes
-        //  we can retries jobs.
+        $prefix = $this->getPrefix() . '-inprogress';
+        $redis = $this->getConnection();
+
+        $key = sprintf(
+            '%s:%s:%s:%s',
+            $prefix,
+            $queue,
+            $partition,
+            $jobUuid
+        );
+
+        $redis->del($key);
     }
 
     public function recoverLost()
@@ -214,16 +223,38 @@ class RedisRepository implements RepositoryInterface
         // TODO: Implement recoverLost() method.
     }
 
-    private function popPrivate($prefix, $queue, $partition)
+    private function partitionsPrivate($queue, $prefixAddon = '')
     {
+        $prefix = $this->getPrefix() . $prefixAddon;
+        $redis = $this->getConnection();
+
+        $pattern = sprintf(
+            '*%s:%s:*',
+            $prefix,
+            $queue
+        );
+
+        $removablePrefix = $prefix . ':' . $queue . ':';
+
+        return array_map(function ($item) use ($removablePrefix) {
+            return $this->removePrefix($removablePrefix, $item);
+        }, $redis->keys($pattern));
+    }
+
+    private function popPrivate($queue, $partition, $prefixAddon = '')
+    {
+        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
         $key = sprintf(
-            '%s:%s:%s',
+            '%s%s:%s:%s',
             $prefix,
+            $prefixAddon,
             $queue,
             $partition
         );
+
+        dump($key);
 
         $processedKey = sprintf(
             '%s-internal:%s:%s:processed',

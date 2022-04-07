@@ -30,10 +30,10 @@ class FairSignalJob implements ShouldQueue
             /** @var RepositoryInterface $repository */
             $repository = app(RepositoryInterface::class);
 
-            list($partition, $jobSerialized) = $this->pop($repository, 'pop');
+            list($partition, $jobSerialized) = $this->pop($repository, 'pop', 'partitions');
 
             if (is_null($jobSerialized)) {
-                list($partition, $jobSerialized) = $this->pop($repository, 'popFailed');
+                list($partition, $jobSerialized) = $this->pop($repository, 'popFailed', 'failedPartitions');
             }
 
             if (is_null($jobSerialized)) {
@@ -49,14 +49,10 @@ class FairSignalJob implements ShouldQueue
 
         try {
             if (isset($job->uuid)) {
-                $repository->expectAcknowledge($this->connection, $this->queue, $partition, $jobSerialized);
+                $repository->expectAcknowledge($this->connection, $this->queue, $partition, $job->uuid, $jobSerialized);
             }
 
             $job->handle();
-
-            if (isset($job->uuid)) {
-                $repository->acknowledge($this->connection, $this->queue, $partition, $job->uuid);
-            }
         } catch (\Throwable $e) {
             printf('[%s] %s' . PHP_EOL, get_class($job), $e->getMessage());
 
@@ -67,6 +63,10 @@ class FairSignalJob implements ShouldQueue
             $repository->pushFailed($this->queue, $partition, $jobSerialized);
 
             throw $e;
+        } finally {
+            if (isset($job->uuid)) {
+                $repository->acknowledge($this->connection, $this->queue, $partition, $job->uuid);
+            }
         }
     }
 
@@ -88,9 +88,9 @@ class FairSignalJob implements ShouldQueue
         return $this;
     }
 
-    private function pop($repository, $popMethod = 'pop')
+    private function pop($repository, $popMethod = 'pop', $partitionsMethod = 'partitions')
     {
-        $partition = $this->selectPartition($repository);
+        $partition = $this->selectPartition($repository, $partitionsMethod);
 
         if (is_null($partition)) {
             return [null, null];
@@ -113,18 +113,18 @@ class FairSignalJob implements ShouldQueue
                 return [null, null];
             }
 
-            $partition = $this->selectPartition($repository);
+            $partition = $this->selectPartition($repository, $partitionsMethod);
         }
 
         return [$partition, $jobSerialized];
     }
 
-    private function selectPartition($repository)
+    private function selectPartition($repository, $partitionsMethod = 'partitions')
     {
-        $partitions = $repository->partitions($this->queue);
+        $partitions = $repository->$partitionsMethod($this->queue);
 
         if (empty($partitions)) {
-            return 'null';
+            return null;
         }
 
         $partitionIndex = random_int(0, count($partitions) - 1);
