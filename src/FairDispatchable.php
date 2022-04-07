@@ -10,6 +10,8 @@ trait FairDispatchable
 {
     use Dispatchable;
 
+    public $uuid;
+
     public $partition;
 
     public static function dispatch(...$arguments)

@@ -7,6 +7,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Str;
 
 class FairSignalJob implements ShouldQueue
 {
@@ -18,55 +19,52 @@ class FairSignalJob implements ShouldQueue
 
     public function __construct($job)
     {
+        $job->uuid = Str::uuid()->toString();
+
         $this->originalJob = $job;
     }
 
     public function handle()
     {
-        /** @var RepositoryInterface $repository */
-        $repository = app(RepositoryInterface::class);
+        try {
+            /** @var RepositoryInterface $repository */
+            $repository = app(RepositoryInterface::class);
 
-        $selectPartition = function () use ($repository) {
+            list($partition, $jobSerialized) = $this->pop($repository, 'pop');
 
-            $partitions = $repository->partitions($this->queue);
-
-            if (empty($partitions)) {
-                return 'null';
+            if (is_null($jobSerialized)) {
+                list($partition, $jobSerialized) = $this->pop($repository, 'popFailed');
             }
 
-            $partitionIndex = random_int(0, count($partitions) - 1);
-
-            return $partitions[$partitionIndex];
-        };
-
-        $partition = $selectPartition();
-
-        $tries = 0;
-        while (empty($jobSerialized = $repository->pop($this->queue, $partition))) {
-            // maybe this partition has run out of jobs during the
-            //  random selection process, so try getting a fresh list
-            //  of partitions and pick another one.
-
-            sleep(1);
-
-            $tries++;
-            if ($tries >= 10) {
-                // no jobs available to process (concluded after 10
-                // times retry with a second delay each).
+            if (is_null($jobSerialized)) {
+                // no jobs found neither in normal nor in failed
                 return;
             }
 
-            $partition = $selectPartition();
+            $job = unserialize($jobSerialized);
+        } catch (\Throwable $exception) {
+            dump($exception);
+            throw $exception;
         }
 
-        $job = unserialize($jobSerialized);
-
         try {
+            if (isset($job->uuid)) {
+                $repository->expectAcknowledge($this->connection, $this->queue, $partition, $jobSerialized);
+            }
+
             $job->handle();
+
+            if (isset($job->uuid)) {
+                $repository->acknowledge($this->connection, $this->queue, $partition, $job->uuid);
+            }
         } catch (\Throwable $e) {
+            printf('[%s] %s' . PHP_EOL, get_class($job), $e->getMessage());
+
             // push it back to the list to be retried later
 
-            $repository->push($this->queue, $partition, $jobSerialized);
+            //TODO: add more logic to better handle failures/retries
+
+            $repository->pushFailed($this->queue, $partition, $jobSerialized);
 
             throw $e;
         }
@@ -88,5 +86,49 @@ class FairSignalJob implements ShouldQueue
         $this->partition = $partition;
 
         return $this;
+    }
+
+    private function pop($repository, $popMethod = 'pop')
+    {
+        $partition = $this->selectPartition($repository);
+
+        if (is_null($partition)) {
+            return [null, null];
+        }
+
+        $tries = 0;
+
+        while (empty($jobSerialized = $repository->$popMethod($this->queue, $partition))) {
+            // maybe this partition has run out of jobs during the
+            //  random selection process, so try getting a fresh list
+            //  of partitions and pick another one.
+
+            usleep(100 * 1000); // 100ms
+
+            $tries++;
+            if ($tries >= 10) {
+                // no jobs available to process (concluded after 10
+                // times retry with a second delay each).
+
+                return [null, null];
+            }
+
+            $partition = $this->selectPartition($repository);
+        }
+
+        return [$partition, $jobSerialized];
+    }
+
+    private function selectPartition($repository)
+    {
+        $partitions = $repository->partitions($this->queue);
+
+        if (empty($partitions)) {
+            return 'null';
+        }
+
+        $partitionIndex = random_int(0, count($partitions) - 1);
+
+        return $partitions[$partitionIndex];
     }
 }

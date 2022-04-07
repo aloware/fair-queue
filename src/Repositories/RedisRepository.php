@@ -169,9 +169,53 @@ class RedisRepository implements RepositoryInterface
         $redis->rpush($key, $job);
     }
 
+    public function pushFailed($queue, $partition, $job)
+    {
+        $prefix = $this->getPrefix();
+        $redis = $this->getConnection();
+
+        $key = sprintf(
+            '%s-failed:%s:%s',
+            $prefix,
+            $queue,
+            $partition
+        );
+
+        $redis->rpush($key, $job);
+    }
+
     public function pop($queue, $partition)
     {
         $prefix = $this->getPrefix();
+
+        return $this->popPrivate($prefix, $queue, $partition);
+    }
+
+    public function popFailed($queue, $partition)
+    {
+        $prefix = $this->getPrefix() . '-failed';
+
+        return $this->popPrivate($prefix, $queue, $partition);
+    }
+
+    public function expectAcknowledge($connection, $queue, $partition, $job, $wait = 60)
+    {
+        // TODO: Implement expectAcknowledge() method.
+    }
+
+    public function acknowledge($connection, $queue, $partition, $jobUuid)
+    {
+        // TODO: we should secure retrievals so in case of service crashes
+        //  we can retries jobs.
+    }
+
+    public function recoverLost()
+    {
+        // TODO: Implement recoverLost() method.
+    }
+
+    private function popPrivate($prefix, $queue, $partition)
+    {
         $redis = $this->getConnection();
 
         $key = sprintf(
@@ -213,12 +257,6 @@ class RedisRepository implements RepositoryInterface
         return $redis->lpop($key);
     }
 
-    public function acknowledge($queue, $partition, $jobId)
-    {
-        // TODO: we should secure retrievals so in case of service crashes
-        //  we can retries jobs.
-    }
-
     private function removeBeforePrefix($prefix, $value)
     {
         $removablePrefix = $prefix . ':';
@@ -242,5 +280,4 @@ class RedisRepository implements RepositoryInterface
     {
         return config('fair-queue.key_prefix');
     }
-
 }

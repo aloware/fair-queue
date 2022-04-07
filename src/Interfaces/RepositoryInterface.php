@@ -11,9 +11,17 @@ interface RepositoryInterface
 
     public function push($queue, $partition, $job);
 
+    public function pushFailed($queue, $partition, $job);
+
     public function pop($queue, $partition);
 
-    public function acknowledge($queue, $partition, $jobId);
+    public function popFailed($queue, $partition);
+
+    public function expectAcknowledge($connection, $queue, $partition, $job, $wait = 60);
+
+    public function acknowledge($connection, $queue, $partition, $jobUuid);
+
+    public function recoverLost();
 
     public function queues();
 
