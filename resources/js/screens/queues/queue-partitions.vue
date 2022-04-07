@@ -108,6 +108,7 @@
             <tr>
                 <th>Partition Name</th>
                 <th>Number Of Jobs</th>
+                <th>n/s</th>
             </tr>
             </thead>
 
@@ -128,6 +129,9 @@
                 </td>
                 <td>
                     <span>{{ partition.count }}</span>
+                </td>
+                <td>
+                    <span>{{ partition.per_second }}</span>
                 </td>
             </tr>
             </tbody>
