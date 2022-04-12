@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Redis;
 
 class RedisRepository implements RepositoryInterface
 {
+    use RedisKeys;
+
     public function partitions($queue)
     {
         return $this->partitionsPrivate($queue);
@@ -14,23 +16,22 @@ class RedisRepository implements RepositoryInterface
 
     public function failedPartitions($queue)
     {
-        return $this->partitionsPrivate($queue, '-failed');
+        return $this->partitionsPrivate(
+            $queue,
+            'queueFailedJobsPartitionListPattern',
+            'extractPartitionNameFromFailedJobsPartitionKey'
+        );
     }
 
     public function queues()
     {
-        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $pattern = sprintf(
-            '*%s:*',
-            $prefix
-        );
+        $keys = $redis->keys($this->queueListPattern());
 
-        $queues = array_map(function ($item) use ($prefix) {
-            $rep = $this->removePrefix($prefix . ':', $item);
-            return explode(':', $rep)[0];
-        }, $redis->keys($pattern));
+        $queues = array_map(function ($key) {
+            return $this->extractQueueNameFromPartitionKey($key);
+        }, $keys);
 
         return array_values(array_unique($queues));
     }
@@ -39,9 +40,11 @@ class RedisRepository implements RepositoryInterface
     {
         $queues = [];
 
-        foreach ($this->queues() as $key => $queue) {
-            $queues[$key]['queue'] = $queue;
-            $queues[$key]['count'] = count($this->partitions($queue));
+        foreach ($this->queues() as $queue) {
+            $queues[] = [
+                'queue' => $queue,
+                'count' => count($this->partitions($queue))
+            ];
         }
 
         return $queues;
@@ -49,28 +52,26 @@ class RedisRepository implements RepositoryInterface
 
     public function partitionsWithCount($queue)
     {
-        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $pattern = sprintf(
-            '*%s:%s:*',
-            $prefix,
-            $queue
-        );
+        $pattern = $this->queuePartitionListPattern($queue);
 
-        $keys = $redis->keys($pattern);
+        $keys       = $redis->keys($pattern);
         $partitions = [];
 
-        foreach ($keys as $key => $value) {
-            $partition = $this->removePrefix($prefix . ':', $value);
+        foreach ($keys as $key) {
+            $partition = $this->extractPartitionNameFromPartitionKey($key);
 
-            $persecKey = $prefix . '-internal:' . $partition . ':persec';
+            $partitionKey       = $this->partitionKey($queue, $partition);
+            $partitionPerSecKey = $this->partitionPerSecKey($queue, $partition);
 
-            list ($lastAccess, $lastPersec) = explode(',', $redis->get($persecKey) ?? '0,0');
+            list ($lastAccess, $lastPersec) = explode(',', $redis->get($partitionPerSecKey) ?? '0,0');
 
-            $partitions[$key]['name'] = explode(':', $partition)[1];
-            $partitions[$key]['count'] = $redis->llen($prefix . ':' . $partition) ?: 0;
-            $partitions[$key]['per_second'] = $lastPersec;
+            $partitions[] = [
+                'name'       => $partition,
+                'count'      => $redis->llen($partitionKey) ?: 0,
+                'per_second' => $lastPersec
+            ];
         }
 
         return $partitions;
@@ -78,14 +79,13 @@ class RedisRepository implements RepositoryInterface
 
     public function totalJobsCount($queues)
     {
-        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
         $jobsCount = 0;
 
         foreach ($queues as $queue) {
             foreach ($this->partitions($queue) as $partition) {
-                $jobsCount += $redis->llen("{$prefix}:{$queue}:{$partition}");
+                $jobsCount += $redis->llen($this->partitionKey($queue, $partition));
             }
         }
 
@@ -94,26 +94,22 @@ class RedisRepository implements RepositoryInterface
 
     public function jobs($queue, $partition)
     {
-        $prefix = $this->getPrefix();
-        $redis = $this->getConnection();
-        $perPage = request('limit', 25);
+        $redis      = $this->getConnection();
+        $perPage    = request('limit', 25);
         $startingAt = request('starting_at', 0);
 
-        $pattern = sprintf(
-            '%s:%s:%s',
-            $prefix,
-            $queue,
-            $partition
-        );
+        $partitionKey = $this->partitionKey($queue, $partition);
 
-        $jobs = $redis->lrange($pattern, $startingAt, $perPage + $startingAt);
-        $jobsTotalPages = ceil(count($redis->lrange($pattern, 0, -1)) / $perPage);
+        $jobs           = $redis->lrange($partitionKey, $startingAt, $perPage + $startingAt);
+        $jobsTotalPages = ceil(count($redis->lrange($partitionKey, 0, -1)) / $perPage);
 
         $jobsArray = [];
 
         foreach ($jobs as $index => $job) {
-            $jobsArray[$index]['id'] = ($index + $startingAt);
-            $jobsArray[$index]['name'] = get_class(unserialize($job));
+            $jobsArray[] = [
+                'id'   => $index + $startingAt,
+                'name' => get_class(unserialize($job))
+            ];
         }
 
         $hasMore = count($jobs) > $perPage;
@@ -131,184 +127,119 @@ class RedisRepository implements RepositoryInterface
 
     public function job($queue, $partition, $index)
     {
-        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $pattern = sprintf(
-            '%s:%s:%s',
-            $prefix,
-            $queue,
-            $partition
-        );
+        $partitionKey = $this->partitionKey($queue, $partition);
 
-        $jobs = $redis->lrange($pattern, $index, $index);
+        $jobs = $redis->lrange($partitionKey, $index, $index);
 
         return $jobs ? $jobs[0] : null;
     }
 
     public function push($queue, $partition, $job)
     {
-        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $key = sprintf(
-            '%s:%s:%s',
-            $prefix,
-            $queue,
-            $partition
-        );
+        $partitionKey = $this->partitionKey($queue, $partition);
 
-        $redis->rpush($key, $job);
+        $redis->rpush($partitionKey, $job);
     }
 
     public function pushFailed($queue, $partition, $job)
     {
-        $prefix = $this->getPrefix() . '-failed';
         $redis = $this->getConnection();
 
-        $key = sprintf(
-            '%s:%s:%s',
-            $prefix,
-            $queue,
-            $partition
-        );
+        $partitionKey = $this->failedJobsPartitionKey($queue, $partition);
 
-        $redis->rpush($key, $job);
+        $redis->rpush($partitionKey, $job);
     }
 
     public function pop($queue, $partition)
     {
-        return $this->popPrivate($queue, $partition, '');
+        return $this->popPrivate($queue, $partition, 'partitionKey');
     }
 
     public function popFailed($queue, $partition)
     {
-        return $this->popPrivate($queue, $partition, '-failed');
+        return $this->popPrivate($queue, $partition, 'failedJobsPartitionKey');
     }
 
     public function expectAcknowledge($connection, $queue, $partition, $jobUuid, $job, $wait = 60)
     {
-        $prefix = $this->getPrefix() . '-inprogress';
         $redis = $this->getConnection();
 
-        $key = sprintf(
-            '%s:%s:%s:%s',
-            $prefix,
-            $queue,
-            $partition,
-            $jobUuid
-        );
+        $key = $this->inProgressJobKey($queue, $partition, $jobUuid);
 
         $redis->set($key, $job);
     }
 
     public function acknowledge($connection, $queue, $partition, $jobUuid)
     {
-        $prefix = $this->getPrefix() . '-inprogress';
         $redis = $this->getConnection();
 
-        $key = sprintf(
-            '%s:%s:%s:%s',
-            $prefix,
-            $queue,
-            $partition,
-            $jobUuid
-        );
+        $key = $this->inProgressJobKey($queue, $partition, $jobUuid);
 
         $redis->del($key);
     }
 
     public function recoverLost()
     {
-        // TODO: Implement recoverLost() method.
+        // TODO:
+        //  1- get sample job for each partition (to learn about the used queue connection)
+        //  2- get all jobs which have been on in-progress mode for a long time
+        //  3- generate fake signals on connection+queue
+        //  4- create a console command to call this method
+        //  5- configure service provider to schedule the console command to be running periodically
     }
 
-    private function partitionsPrivate($queue, $prefixAddon = '')
-    {
-        $prefix = $this->getPrefix() . $prefixAddon;
+    private function partitionsPrivate(
+        $queue,
+        $queuePartitionListPatternResolver = 'queuePartitionListPattern',
+        $extractorResolver = 'extractPartitionNameFromPartitionKey'
+    ) {
         $redis = $this->getConnection();
 
-        $pattern = sprintf(
-            '*%s:%s:*',
-            $prefix,
-            $queue
-        );
+        $keys = $redis->keys($this->$queuePartitionListPatternResolver($queue));
 
-        $removablePrefix = $prefix . ':' . $queue . ':';
+        $partitions = array_map(function ($item) use ($extractorResolver) {
+            return $this->$extractorResolver($item);
+        }, $keys);
 
-        return array_map(function ($item) use ($removablePrefix) {
-            return $this->removePrefix($removablePrefix, $item);
-        }, $redis->keys($pattern));
+        return array_values($partitions);
     }
 
-    private function popPrivate($queue, $partition, $prefixAddon = '')
+    private function popPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')
     {
-        $prefix = $this->getPrefix();
         $redis = $this->getConnection();
 
-        $key = sprintf(
-            '%s%s:%s:%s',
-            $prefix,
-            $prefixAddon,
-            $queue,
-            $partition
-        );
+        $partitionKey = $this->$partitionKeyResolver($queue, $partition);
 
-        dump($key);
+        $processedKey       = $this->partitionProcessedCountJobKey($queue, $partition);
+        $partitionPerSecKey = $this->partitionPerSecKey($queue, $partition);
 
-        $processedKey = sprintf(
-            '%s-internal:%s:%s:processed',
-            $prefix,
-            $queue,
-            $partition
-        );
-
-        $persecKey = sprintf(
-            '%s-internal:%s:%s:persec',
-            $prefix,
-            $queue,
-            $partition
-        );
+        dump($partitionKey);
 
         $redis->incr($processedKey);
         $redis->expire($processedKey, 3);
 
         $now = time();
-        list ($lastAccess, $lastPersec) = explode(',', $redis->get($persecKey) ?? ($now - 1) . ',0');
+        list ($lastAccess, $lastPersec) = explode(',', $redis->get($partitionPerSecKey) ?? ($now - 1) . ',0');
 
         if ($now - $lastAccess >= 1) {
             $persec = max($redis->get($processedKey) ?? 0, 0);
 
             $data = $now . ',' . max($persec, $persec - $lastPersec);
-            $redis->set($persecKey, $data, 'EX', 3);
+            $redis->set($partitionPerSecKey, $data, 'EX', 3);
 
             $redis->decrBy($processedKey, $persec);
         }
 
-        return $redis->lpop($key);
-    }
-
-    private function removeBeforePrefix($prefix, $value)
-    {
-        $removablePrefix = $prefix . ':';
-        $pos = strpos($value, $removablePrefix);
-        return substr($value, $pos);
-    }
-
-    private function removePrefix($prefix, $value)
-    {
-        $pos = strpos($value, $prefix);
-        return substr($value, $pos + strlen($prefix));
+        return $redis->lpop($partitionKey);
     }
 
     private function getConnection()
     {
         $database = config('fair-queue.database');
         return Redis::connection($database);
-    }
-
-    private function getPrefix()
-    {
-        return config('fair-queue.key_prefix');
     }
 }
