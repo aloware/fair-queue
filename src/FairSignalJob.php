@@ -19,7 +19,9 @@ class FairSignalJob implements ShouldQueue
 
     public function __construct($job)
     {
-        $job->uuid = Str::uuid()->toString();
+        if (!is_null($job)) {
+            $job->uuid = Str::uuid()->toString();
+        }
 
         $this->originalJob = $job;
     }
@@ -49,16 +51,20 @@ class FairSignalJob implements ShouldQueue
 
         try {
             if (isset($job->uuid)) {
-                $repository->expectAcknowledge($this->connection, $this->queue, $partition, $job->uuid, $jobSerialized);
+                $repository->expectAcknowledge(
+                    $this->connection,
+                    $this->queue,
+                    $partition,
+                    $job->uuid,
+                    $jobSerialized
+                );
             }
 
             $job->handle();
         } catch (\Throwable $e) {
             printf('[%s] %s' . PHP_EOL, get_class($job), $e->getMessage());
 
-            // push it back to the list to be retried later
-
-            //TODO: add more logic to better handle failures/retries
+            // this will be retried later from failed job partitions
 
             $repository->pushFailed($this->queue, $partition, $jobSerialized);
 

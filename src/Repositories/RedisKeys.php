@@ -30,11 +30,22 @@ trait RedisKeys
         return $this->partitionKey($queue, $partition, '-internal') . ':persec';
     }
 
-    private function inProgressJobKey($queue, $partition, $jobUuid)
+    private function partitionSampleSignalKey($queue, $partition)
     {
         return sprintf(
-            '%s-inprogress:%s:%s:%s',
+            '%s-sample:%s:%s',
             $this->fairQueueKeyPrefix(),
+            $queue,
+            $partition
+        );
+    }
+
+    private function inProgressJobKey($connection, $queue, $partition, $jobUuid)
+    {
+        return sprintf(
+            '%s-inprogress:%s:%s:%s:%s',
+            $this->fairQueueKeyPrefix(),
+            $connection,
             $queue,
             $partition,
             $jobUuid
@@ -67,6 +78,14 @@ trait RedisKeys
         );
     }
 
+    private function inProgressJobsPattern()
+    {
+        return sprintf(
+            '*%s-inprogress:*',
+            $this->fairQueueKeyPrefix()
+        );
+    }
+
     private function extractQueueNameFromPartitionKey($partitionKey)
     {
         $rep = $this->removePrefix($this->fairQueueKeyPrefix() . ':', $partitionKey);
@@ -83,6 +102,20 @@ trait RedisKeys
     {
         $rep = $this->removePrefix($this->fairQueueKeyPrefix() . '-failed:', $partitionKey);
         return explode(':', $rep)[1];
+    }
+
+    private function extractInProgressJobKey($partitionKey)
+    {
+        $rep = $this->removePrefix($this->fairQueueKeyPrefix() . '-inprogress:', $partitionKey);
+
+        $splitted = explode(':', $rep);
+
+        $connection = $splitted[0];
+        $queue      = $splitted[1];
+        $partition  = $splitted[2];
+        $jobUuid    = $splitted[3];
+
+        return [$connection, $queue, $partition, $jobUuid];
     }
 
     private function fairQueueKeyPrefix()

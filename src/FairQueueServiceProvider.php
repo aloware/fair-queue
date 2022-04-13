@@ -2,9 +2,11 @@
 
 namespace Aloware\FairQueue;
 
+use Aloware\FairQueue\Commands\RecoverLostJobs;
 use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Repositories\RedisRepository;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 
@@ -31,9 +33,20 @@ class FairQueueServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->commands([
+            RecoverLostJobs::class
+        ]);
+
         $this->registerRoutes();
         $this->registerResources();
         $this->publishAssets();
+
+        $this->app->booted(function () {
+            /** @var Schedule $schedule */
+            $schedule = $this->app->make(Schedule::class);
+
+            $schedule->command(RecoverLostJobs::class)->hourly();
+        });
     }
 
     /**
@@ -44,11 +57,11 @@ class FairQueueServiceProvider extends ServiceProvider
     protected function registerRoutes(): void
     {
         Route::group([
-            'prefix' => 'fairqueue',
-            'namespace' => 'Aloware\FairQueue\Http\Controllers',
+            'prefix'     => 'fairqueue',
+            'namespace'  => 'Aloware\FairQueue\Http\Controllers',
             'middleware' => config('fair-queue.middleware', 'web'),
         ], function () {
-            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+            $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
         });
     }
 
@@ -59,7 +72,7 @@ class FairQueueServiceProvider extends ServiceProvider
      */
     protected function registerResources(): void
     {
-        $this->loadViewsFrom(__DIR__.'/../resources/views', 'fairqueue');
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'fairqueue');
     }
 
     /**
@@ -68,11 +81,11 @@ class FairQueueServiceProvider extends ServiceProvider
     protected function publishAssets()
     {
         $this->publishes([
-            __DIR__.'/../config/fair-queue.php' => config_path('fair-queue.php'),
+            __DIR__ . '/../config/fair-queue.php' => config_path('fair-queue.php'),
         ], 'fairqueue-config');
 
         $this->publishes([
-            realpath(__DIR__.'/../public') => public_path('vendor/fairqueue'),
+            realpath(__DIR__ . '/../public') => public_path('vendor/fairqueue'),
         ], 'public');
     }
 }

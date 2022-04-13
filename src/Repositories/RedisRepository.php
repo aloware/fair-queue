@@ -2,6 +2,7 @@
 
 namespace Aloware\FairQueue\Repositories;
 
+use Aloware\FairQueue\FairSignalJob;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Illuminate\Support\Facades\Redis;
 
@@ -164,32 +165,61 @@ class RedisRepository implements RepositoryInterface
         return $this->popPrivate($queue, $partition, 'failedJobsPartitionKey');
     }
 
-    public function expectAcknowledge($connection, $queue, $partition, $jobUuid, $job, $wait = 60)
+    public function expectAcknowledge($connection, $queue, $partition, $jobUuid, $job)
     {
         $redis = $this->getConnection();
 
-        $key = $this->inProgressJobKey($queue, $partition, $jobUuid);
+        $key             = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
+        $sampleSignalKey = $this->partitionSampleSignalKey($queue, $partition);
 
         $redis->set($key, $job);
+        $redis->set($sampleSignalKey, serialize([$connection, $queue, $partition]));
     }
 
     public function acknowledge($connection, $queue, $partition, $jobUuid)
     {
         $redis = $this->getConnection();
 
-        $key = $this->inProgressJobKey($queue, $partition, $jobUuid);
+        $key = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
 
         $redis->del($key);
     }
 
-    public function recoverLost()
+    public function recoverLost($age = 300)
     {
-        // TODO:
-        //  1- get sample job for each partition (to learn about the used queue connection)
-        //  2- get all jobs which have been on in-progress mode for a long time
-        //  3- generate fake signals on connection+queue
-        //  4- create a console command to call this method
-        //  5- configure service provider to schedule the console command to be running periodically
+        $redis = $this->getConnection();
+
+        $pattern = $this->inProgressJobsPattern();
+        $keys    = $redis->keys($pattern);
+
+        $count = 0;
+
+        foreach ($keys as $key) {
+            list ($connection, $queue, $partition, $jobUuid) = $this->extractInProgressJobKey($key);
+
+            $inProgressJobKey = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
+
+            $lastAccess = $redis->object('idletime', $inProgressJobKey);
+            if ($lastAccess < $age) {
+                continue;
+            }
+
+            // restore the job into partition
+            $this->push($queue, $partition, $redis->get($inProgressJobKey));
+            //
+
+            // and generate fake signal
+            $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
+
+            if (!empty($connection)) {
+                $dispatch->onConnection($connection);
+            }
+            //
+
+            $count++;
+        }
+
+        return $count;
     }
 
     private function partitionsPrivate(
@@ -216,8 +246,6 @@ class RedisRepository implements RepositoryInterface
 
         $processedKey       = $this->partitionProcessedCountJobKey($queue, $partition);
         $partitionPerSecKey = $this->partitionPerSecKey($queue, $partition);
-
-        dump($partitionKey);
 
         $redis->incr($processedKey);
         $redis->expire($processedKey, 3);
