@@ -2,6 +2,8 @@
 
 namespace Aloware\FairQueue\Interfaces;
 
+use Aloware\FairQueue\Exceptions\SampleNotFoundException;
+
 interface RepositoryInterface
 {
     /**
@@ -23,8 +25,6 @@ interface RepositoryInterface
 
     public function acknowledge($connection, $queue, $partition, $jobUuid);
 
-    public function recoverLost($age = 300);
-
     public function queues();
 
     public function queuesWithPartitions();
@@ -36,5 +36,12 @@ interface RepositoryInterface
     public function job($queue, $partition, $index);
 
     public function totalJobsCount($queues);
+
+    public function recoverLost($age = 300);
+
+    /**
+     * @throws SampleNotFoundException
+     */
+    public function generateFakeSignals($queue, $count);
 
 }

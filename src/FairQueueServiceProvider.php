@@ -2,6 +2,7 @@
 
 namespace Aloware\FairQueue;
 
+use Aloware\FairQueue\Commands\GenerateSignal;
 use Aloware\FairQueue\Commands\RecoverLostJobs;
 use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Repositories\RedisRepository;
@@ -34,7 +35,8 @@ class FairQueueServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
-            RecoverLostJobs::class
+            RecoverLostJobs::class,
+            GenerateSignal::class,
         ]);
 
         $this->registerRoutes();

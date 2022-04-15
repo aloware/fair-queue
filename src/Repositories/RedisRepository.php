@@ -2,6 +2,7 @@
 
 namespace Aloware\FairQueue\Repositories;
 
+use Aloware\FairQueue\Exceptions\SampleNotFoundException;
 use Aloware\FairQueue\FairSignalJob;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Illuminate\Support\Facades\Redis;
@@ -170,10 +171,12 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $key             = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
-        $sampleSignalKey = $this->partitionSampleSignalKey($queue, $partition);
+        $sampleSignalKey = $this->queueSampleSignalKey($queue);
 
-        $redis->set($key, $job);
-        $redis->set($sampleSignalKey, serialize([$connection, $queue, $partition]));
+        $redis->mset([
+            $key             => $job,
+            $sampleSignalKey => serialize([$connection, $queue])
+        ]);
     }
 
     public function acknowledge($connection, $queue, $partition, $jobUuid)
@@ -220,6 +223,30 @@ class RedisRepository implements RepositoryInterface
         }
 
         return $count;
+    }
+
+    /**
+     * @throws SampleNotFoundException
+     */
+    public function generateFakeSignals($queue, $count)
+    {
+        $redis = $this->getConnection();
+
+        $sampleSignalKey = $this->queueSampleSignalKey($queue);
+
+        list ($connection, $queue) = unserialize($redis->get($sampleSignalKey) ?? serialize(['', '']));
+
+        if (empty($queue)) {
+            throw new SampleNotFoundException($queue);
+        }
+
+        for ($i = 1; $i <= $count; $i++) {
+            $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
+
+            if (!empty($connection)) {
+                $dispatch->onConnection($connection);
+            }
+        }
     }
 
     private function partitionsPrivate(

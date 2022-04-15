@@ -30,13 +30,12 @@ trait RedisKeys
         return $this->partitionKey($queue, $partition, '-internal') . ':persec';
     }
 
-    private function partitionSampleSignalKey($queue, $partition)
+    private function queueSampleSignalKey($queue)
     {
         return sprintf(
-            '%s-sample:%s:%s',
+            '%s-sample:%s',
             $this->fairQueueKeyPrefix(),
-            $queue,
-            $partition
+            $queue
         );
     }
 
