@@ -31,11 +31,21 @@ interface RepositoryInterface
 
     public function partitionsWithCount($queue);
 
+    public function failedQueues();
+
+    public function failedQueuesWithPartitions();
+
+    public function failedPartitionsWithCount($queue);
+
     public function jobs($queue, $partition);
 
     public function job($queue, $partition, $index);
 
     public function totalJobsCount($queues);
+
+    public function retryFailedJobs();
+
+    public function purgeFailedJobs();
 
     public function recoverLost($age = 300);
 

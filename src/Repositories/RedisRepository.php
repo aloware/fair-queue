@@ -16,67 +16,57 @@ class RedisRepository implements RepositoryInterface
         return $this->partitionsPrivate($queue);
     }
 
-    public function failedPartitions($queue)
-    {
-        return $this->partitionsPrivate(
-            $queue,
-            'queueFailedJobsPartitionListPattern',
-            'extractPartitionNameFromFailedJobsPartitionKey'
-        );
-    }
-
     public function queues()
     {
-        $redis = $this->getConnection();
-
-        $keys = $redis->keys($this->queueListPattern());
-
-        $queues = array_map(function ($key) {
-            return $this->extractQueueNameFromPartitionKey($key);
-        }, $keys);
-
-        return array_values(array_unique($queues));
+        return $this->queuesPrivate('queueListPattern', 'extractQueueNameFromPartitionKey');
     }
 
     public function queuesWithPartitions()
     {
-        $queues = [];
-
-        foreach ($this->queues() as $queue) {
-            $queues[] = [
-                'queue' => $queue,
-                'count' => count($this->partitions($queue))
-            ];
-        }
-
-        return $queues;
+        return $this->queuesWithPartitionsPrivate('queues', 'partitions');
     }
 
     public function partitionsWithCount($queue)
     {
-        $redis = $this->getConnection();
+        return $this->partitionsWithCountPrivate(
+            $queue,
+            'queuePartitionListPattern',
+            'extractPartitionNameFromPartitionKey',
+            'partitionKey',
+            'partitionPerSecKey',
+            true
+        );
+    }
 
-        $pattern = $this->queuePartitionListPattern($queue);
+    public function failedPartitions($queue)
+    {
+        return $this->partitionsPrivate(
+            $queue,
+            'failedPartitionListPattern',
+            'extractPartitionNameFromFailedPartitionKey'
+        );
+    }
 
-        $keys       = $redis->keys($pattern);
-        $partitions = [];
+    public function failedQueues()
+    {
+        return $this->queuesPrivate('failedQueueListPattern', 'extractQueueNameFromFailedPartitionKey');
+    }
 
-        foreach ($keys as $key) {
-            $partition = $this->extractPartitionNameFromPartitionKey($key);
+    public function failedQueuesWithPartitions()
+    {
+        return $this->queuesWithPartitionsPrivate('failedQueues', 'failedPartitions');
+    }
 
-            $partitionKey       = $this->partitionKey($queue, $partition);
-            $partitionPerSecKey = $this->partitionPerSecKey($queue, $partition);
-
-            list ($lastAccess, $lastPersec) = explode(',', $redis->get($partitionPerSecKey) ?? '0,0');
-
-            $partitions[] = [
-                'name'       => $partition,
-                'count'      => $redis->llen($partitionKey) ?: 0,
-                'per_second' => $lastPersec
-            ];
-        }
-
-        return $partitions;
+    public function failedPartitionsWithCount($queue)
+    {
+        return $this->partitionsWithCountPrivate(
+            $queue,
+            'failedPartitionListPattern',
+            'extractPartitionNameFromFailedPartitionKey',
+            'failedPartitionKey',
+            'failedPartitionPerSecKey',
+            false
+        );
     }
 
     public function totalJobsCount($queues)
@@ -151,7 +141,7 @@ class RedisRepository implements RepositoryInterface
     {
         $redis = $this->getConnection();
 
-        $partitionKey = $this->failedJobsPartitionKey($queue, $partition);
+        $partitionKey = $this->failedPartitionKey($queue, $partition);
 
         $redis->rpush($partitionKey, $job);
     }
@@ -163,7 +153,7 @@ class RedisRepository implements RepositoryInterface
 
     public function popFailed($queue, $partition)
     {
-        return $this->popPrivate($queue, $partition, 'failedJobsPartitionKey');
+        return $this->popPrivate($queue, $partition, 'failedPartitionKey');
     }
 
     public function expectAcknowledge($connection, $queue, $partition, $jobUuid, $job)
@@ -186,6 +176,14 @@ class RedisRepository implements RepositoryInterface
         $key = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
 
         $redis->del($key);
+    }
+
+    public function retryFailedJobs()
+    {
+    }
+
+    public function purgeFailedJobs()
+    {
     }
 
     public function recoverLost($age = 300)
@@ -249,6 +247,37 @@ class RedisRepository implements RepositoryInterface
         }
     }
 
+    private function queuesPrivate(
+        $queueListPatternResolver = 'queueListPattern',
+        $extractQueueNameFromPartitionKeyResolver = 'extractQueueNameFromPartitionKey'
+    ) {
+        $redis = $this->getConnection();
+
+        $keys = $redis->keys($this->$queueListPatternResolver());
+
+        $queues = array_map(function ($key) use ($extractQueueNameFromPartitionKeyResolver) {
+            return $this->$extractQueueNameFromPartitionKeyResolver($key);
+        }, $keys);
+
+        return array_values(array_unique($queues));
+    }
+
+    private function queuesWithPartitionsPrivate(
+        $queuesResolver = 'queues',
+        $partitionsResolver = 'partitions'
+    ) {
+        $queues = [];
+
+        foreach ($this->$queuesResolver() as $queue) {
+            $queues[] = [
+                'queue' => $queue,
+                'count' => count($this->$partitionsResolver($queue))
+            ];
+        }
+
+        return $queues;
+    }
+
     private function partitionsPrivate(
         $queue,
         $queuePartitionListPatternResolver = 'queuePartitionListPattern',
@@ -263,6 +292,45 @@ class RedisRepository implements RepositoryInterface
         }, $keys);
 
         return array_values($partitions);
+    }
+
+    private function partitionsWithCountPrivate(
+        $queue,
+        $queuePartitionListPattern = 'queuePartitionListPattern',
+        $extractPartitionNameFromPartitionKey = 'extractPartitionNameFromPartitionKey',
+        $partitionKey = 'partitionKey',
+        $partitionPerSecKey = 'partitionPerSecKey',
+        $includePartitionPerSecKeyColumn = true
+    ) {
+        $redis = $this->getConnection();
+
+        $pattern = $this->$queuePartitionListPattern($queue);
+
+        $keys       = $redis->keys($pattern);
+        $partitions = [];
+
+        foreach ($keys as $key) {
+            $partition = $this->$extractPartitionNameFromPartitionKey($key);
+
+            $partitionKey = $this->$partitionKey($queue, $partition);
+
+            $item = [
+                'name'  => $partition,
+                'count' => $redis->llen($partitionKey) ?: 0
+            ];
+
+            if ($includePartitionPerSecKeyColumn) {
+                $partitionPerSecKey = $this->$partitionPerSecKey($queue, $partition);
+
+                list ($lastAccess, $lastPersec) = explode(',', $redis->get($partitionPerSecKey) ?? '0,0');
+
+                $item['per_second'] = $lastPersec;
+            }
+
+            $partitions[] = $item;
+        }
+
+        return $partitions;
     }
 
     private function popPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')

@@ -15,7 +15,7 @@ trait RedisKeys
         );
     }
 
-    private function failedJobsPartitionKey($queue, $partition)
+    private function failedPartitionKey($queue, $partition)
     {
         return $this->partitionKey($queue, $partition, '-failed');
     }
@@ -68,7 +68,24 @@ trait RedisKeys
         );
     }
 
-    private function queueFailedJobsPartitionListPattern($queue)
+    private function failedQueuePartitionListPattern($queue)
+    {
+        return sprintf(
+            '*%s-failed:%s:*',
+            $this->fairQueueKeyPrefix(),
+            $queue
+        );
+    }
+
+    private function failedQueueListPattern()
+    {
+        return sprintf(
+            '*%s-failed:*',
+            $this->fairQueueKeyPrefix()
+        );
+    }
+
+    private function failedPartitionListPattern($queue)
     {
         return sprintf(
             '*%s-failed:%s:*',
@@ -97,7 +114,13 @@ trait RedisKeys
         return explode(':', $rep)[1];
     }
 
-    private function extractPartitionNameFromFailedJobsPartitionKey($partitionKey)
+    private function extractQueueNameFromFailedPartitionKey($partitionKey)
+    {
+        $rep = $this->removePrefix($this->fairQueueKeyPrefix() . '-failed:', $partitionKey);
+        return explode(':', $rep)[0];
+    }
+
+    private function extractPartitionNameFromFailedPartitionKey($partitionKey)
     {
         $rep = $this->removePrefix($this->fairQueueKeyPrefix() . '-failed:', $partitionKey);
         return explode(':', $rep)[1];

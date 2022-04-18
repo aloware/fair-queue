@@ -34,9 +34,9 @@ class FairSignalJob implements ShouldQueue
 
             list($partition, $jobSerialized) = $this->pop($repository, 'pop', 'partitions');
 
-            if (is_null($jobSerialized)) {
-                list($partition, $jobSerialized) = $this->pop($repository, 'popFailed', 'failedPartitions');
-            }
+//            if (is_null($jobSerialized)) {
+//                list($partition, $jobSerialized) = $this->pop($repository, 'popFailed', 'failedPartitions');
+//            }
 
             if (is_null($jobSerialized)) {
                 // no jobs found neither in normal nor in failed
