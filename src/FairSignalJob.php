@@ -70,7 +70,6 @@ class FairSignalJob implements ShouldQueue
 
             $jobSerialized = serialize($job);
 
-            var_dump([$job->tries, $job->maxTries]);
             if ($job->tries >= $job->maxTries) {
                 $repository->pushFailed($this->queue, $partition, $jobSerialized);
             } else {
