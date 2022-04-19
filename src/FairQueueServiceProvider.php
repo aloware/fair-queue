@@ -3,6 +3,7 @@
 namespace Aloware\FairQueue;
 
 use Aloware\FairQueue\Commands\GenerateSignal;
+use Aloware\FairQueue\Commands\Publish;
 use Aloware\FairQueue\Commands\PurgeFailedJobs;
 use Aloware\FairQueue\Commands\RecoverLostJobs;
 use Aloware\FairQueue\Commands\RetryFailedJobs;
@@ -37,6 +38,7 @@ class FairQueueServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
+            Publish::class,
             RecoverLostJobs::class,
             GenerateSignal::class,
             RetryFailedJobs::class,

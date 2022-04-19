@@ -50,6 +50,8 @@ class FairSignalJob implements ShouldQueue
         }
 
         try {
+            $job->tries++;
+
             if (isset($job->uuid)) {
                 $repository->expectAcknowledge(
                     $this->connection,
@@ -66,7 +68,15 @@ class FairSignalJob implements ShouldQueue
 
             // this will be retried later from failed job partitions
 
-            $repository->pushFailed($this->queue, $partition, $jobSerialized);
+            $jobSerialized = serialize($job);
+
+            var_dump([$job->tries, $job->maxTries]);
+            if ($job->tries >= $job->maxTries) {
+                $repository->pushFailed($this->queue, $partition, $jobSerialized);
+            } else {
+                $repository->lPush($this->queue, $partition, $jobSerialized);
+                $repository->generateFakeSignals($this->queue, 1);
+            }
 
             throw $e;
         } finally {

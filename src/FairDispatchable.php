@@ -14,6 +14,10 @@ trait FairDispatchable
 
     public $partition;
 
+    public $maxTries = 1;
+
+    public $tries = 0;
+
     public static function dispatch(...$arguments)
     {
         $job = new FairSignalJob(new static(...$arguments));
