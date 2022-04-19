@@ -108,6 +108,15 @@ class RedisRepository implements RepositoryInterface
         $redis->rpush($partitionKey, $job);
     }
 
+    public function lPush($queue, $partition, $job)
+    {
+        $redis = $this->getConnection();
+
+        $partitionKey = $this->partitionKey($queue, $partition);
+
+        $redis->lpush($partitionKey, $job);
+    }
+
     public function pushFailed($queue, $partition, $job)
     {
         $redis = $this->getConnection();

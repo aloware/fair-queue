@@ -9,6 +9,15 @@ class PendingDispatch extends \Illuminate\Foundation\Bus\PendingDispatch
     public function fairConsume($partition)
     {
         $this->job->partition = $partition;
+
+        return $this;
+    }
+
+    public function tries($number = 1)
+    {
+        $this->job->originalJob->maxTries = $number;
+
+        return $this;
     }
 
     public function __destruct()
