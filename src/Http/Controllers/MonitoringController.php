@@ -24,8 +24,7 @@ class MonitoringController extends Controller
      */
     public function failedQueues()
     {
-        $queues = FairQueue::queuesWithPartitions();
-        // $queues = FairQueue::failedQueuesWithPartitions();
+        $queues = FairQueue::failedQueuesWithPartitions();
         return response()->json($queues);
     }
 
@@ -36,8 +35,7 @@ class MonitoringController extends Controller
      */
     public function failedQueuePartitions($queue)
     {
-        $partitions = FairQueue::partitionsWithCount($queue);
-        // $partitions = FairQueue::failedPartitionsWithCount($queue);
+        $partitions = FairQueue::failedPartitionsWithCount($queue);
         return response()->json($partitions);
     }
 
