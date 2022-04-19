@@ -62,4 +62,34 @@ export default [
         component: require('./screens/metrics/preview').default,
     },
 
+    {
+        path: '/failed-queues',
+        name: 'failed-queues',
+        component: require('./screens/failed-queues/index').default,
+    },
+
+    {
+        path: '/failed-queues/:queue',
+        component: require('./screens/failed-queues/queue').default,
+        children: [
+            {
+                path: 'partitions',
+                name: 'failed-queue-partitions',
+                component: require('./screens/failed-queues/queue-partitions').default
+            }
+        ],
+    },
+
+    {
+        path: '/failed-queues/:queue/partitions/:partition/jobs',
+        name: 'failed-partition-jobs',
+        component: require('./screens/failed-queues/partition-jobs').default,
+    },
+
+    {
+        path: '/failed-queues/:queue/partitions/:partition/jobs/:jobId',
+        name: 'failed-job-preview',
+        component: require('./screens/failed-queues/job-preview').default,
+    },
+
 ];

@@ -4,6 +4,7 @@ import axios from 'axios';
 import Routes from './routes';
 import VueRouter from 'vue-router';
 import VueJsonPretty from 'vue-json-pretty';
+import Toasted from 'vue-toasted';
 
 window.Popper = require('popper.js').default;
 
@@ -22,6 +23,11 @@ if (token) {
 }
 
 Vue.use(VueRouter);
+Vue.use(Toasted, {
+    theme: "toasted-primary",
+    position: "top-right",
+    duration : 5000
+});
 
 Vue.prototype.$http = axios.create();
 

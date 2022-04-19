@@ -17,4 +17,28 @@ class MonitoringController extends Controller
         return response()->json($queues);
     }
 
+    /**
+     * Get the key performance stats for the dashboard.
+     *
+     * @return array
+     */
+    public function failedQueues()
+    {
+        $queues = FairQueue::queuesWithPartitions();
+        // $queues = FairQueue::failedQueuesWithPartitions();
+        return response()->json($queues);
+    }
+
+    /**
+     * Get failed queue partitions
+     *
+     * @return array
+     */
+    public function failedQueuePartitions($queue)
+    {
+        $partitions = FairQueue::partitionsWithCount($queue);
+        // $partitions = FairQueue::failedPartitionsWithCount($queue);
+        return response()->json($partitions);
+    }
+
 }

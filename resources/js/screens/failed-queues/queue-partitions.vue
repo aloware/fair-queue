@@ -1,5 +1,5 @@
 <script type="text/ecmascript-6">
-    import Modal from '../..//components/Modal.vue';
+    import Modal from '../../components/Modal.vue';
     export default {
         props: ['type'],
         components: {Modal},
@@ -63,7 +63,7 @@
                     this.ready = false;
                 }
 
-                this.$http.get(FairQueue.basePath + '/api/queues/' + encodeURIComponent(queue) + '/partitions?starting_at='+ starting +'&limit=' + this.perPage)
+                this.$http.get(FairQueue.basePath + '/api/failed-queues/' + encodeURIComponent(queue) + '/partitions?starting_at='+ starting +'&limit=' + this.perPage)
                     .then(response => {
                         if (!this.$root.autoLoadsNewEntries && refreshing && this.partitions.length && _.first(response.data).id !== _.first(this.partitions).id) {
                             this.hasNewEntries = true;
@@ -117,9 +117,8 @@
         <table v-if="ready && partitions.length > 0" class="table table-hover table-sm mb-0">
             <thead>
             <tr>
-                <th>Partition Name</th>
+                <th>Failed Partition Name</th>
                 <th>Number Of Jobs</th>
-                <th>n/s</th>
             </tr>
             </thead>
 
@@ -134,15 +133,12 @@
 
             <tr v-for="partition in partitions" :key="partition.name">
                 <td>
-                    <router-link :title="partition.name" :to="{ name: 'partition-jobs', params: { partition: partition.name, queue: $route.params.queue }}">
+                    <router-link :title="partition.name" :to="{ name: 'failed-partition-jobs', params: { partition: partition.name, queue: $route.params.queue }}">
                         {{ jobBaseName(partition.name) }}
                     </router-link>
                 </td>
                 <td>
                     <span>{{ partition.count }}</span>
-                </td>
-                <td>
-                    <span>{{ partition.per_second }}</span>
                 </td>
             </tr>
             </tbody>

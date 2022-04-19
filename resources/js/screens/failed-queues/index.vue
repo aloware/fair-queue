@@ -1,5 +1,5 @@
 <script type="text/ecmascript-6">
-    import Modal from '../..//components/Modal.vue';
+    import Modal from '../../components/Modal.vue';
     export default {
         components: {Modal},
         /**
@@ -15,11 +15,8 @@
                 loadingNewEntries: false,
                 totalPages: 10,
                 queues: [],
-                isFakeSignalModalVisible: false,
-                selectedQueue: '',
-                fakeSignalAmount: '',
+                isRetryAllModalVisible: false,
                 isModalVisible: false,
-                amount: 5
             };
         },
 
@@ -40,7 +37,7 @@
             loadQueues(starting = 0) {
                 this.ready = false;
 
-                this.$http.get(FairQueue.basePath + '/api/monitoring?starting_at=' + starting + '&limit=' + this.perPage)
+                this.$http.get(FairQueue.basePath + '/api/failed-queues?starting_at=' + starting + '&limit=' + this.perPage)
                     .then(response => {
                         this.queues = response.data;
 
@@ -49,39 +46,38 @@
             },
             closeModal() {
                 this.isModalVisible = false;
-                this.isFakeSignalModalVisible = false;
+                this.isRetryAllModalVisible = false;
             },
-            showFakeSignalModal(queue) {
-                this.isFakeSignalModalVisible = true
-                this.queue = queue
+            showRetryAllModal() {
+                this.isRetryAllModalVisible = true
             },
-            showRecoverFailedJobsModal(queue) {
+            showPurgeAllModal() {
                 this.isModalVisible = true
             },
-            generateFakeSignal() {
+            submitRetryAll() {
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/fake-signal/' + this.selectedQueue + 'generate?amount=' + this.fakeSignalAmount)
+                this.$http.post(FairQueue.basePath + '/api/jobs/retry-failed-jobs/')
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
-                        this.$toasted.show('Fake Signals Generated Successfully');
+                        this.$toasted.show('Process was successful');
                     })
                     .catch(error => {
                         this.saving = false;
                     });
             },
-            recoverLostJobs() {
+            submitPurgeAll() {
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/recover-lost-jobs?amount=' + this.amount)
+                this.$http.post(FairQueue.basePath + '/api/jobs/purge-failed-jobs/')
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
-                        this.$toasted.show(response.data.recovered + ' Jobs Recovered');
+                        this.$toasted.show('Process was successful');
                     })
                     .catch(error => {
                         this.saving = false;
                     });
-            }
+            },
         }
     }
 </script>
@@ -90,9 +86,12 @@
     <div>
         <div class="card">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5>Queues</h5>
+                <h5>Failed Queues</h5>
 
-                <button @click="showRecoverFailedJobsModal()" class="btn btn-primary btn-sm">Recover Lost Jobs</button>
+                <div>
+                    <button @click="showRetryAllModal()" class="btn btn-primary btn-sm">Retry All</button>
+                    <button @click="showPurgeAllModal()" class="btn btn-warning btn-sm">Purge All</button>
+                </div>
             </div>
 
             <div v-if="!ready" class="d-flex align-items-center justify-content-center card-bg-secondary p-5 bottom-radius">
@@ -111,23 +110,19 @@
             <table v-if="ready && queues.length > 0" class="table table-hover table-sm mb-0">
                 <thead>
                 <tr>
-                    <th>Queue Name</th>
+                    <th>Failed Queue Name</th>
                     <th>Queue Partitions</th>
-                    <th></th>
                 </tr>
                 </thead>
 
                 <tbody>
                 <tr v-for="queue in queues" :key="queue.queue">
                     <td>
-                        <router-link :to="{ name: 'queue-partitions', params: { queue:queue.queue }}" href="#">
+                        <router-link :to="{ name: 'failed-queue-partitions', params: { queue:queue.queue }}" href="#">
                             {{ queue.queue }}
                         </router-link>
                     </td>
                     <td>{{ queue.count }}</td>
-                    <td class="gen-btn">
-                        <button @click="showFakeSignalModal(queue.queue)" class="btn btn-primary btn-sm">Fake Signal Gen</button>
-                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -137,47 +132,41 @@
             @close="closeModal"
         >
             <template v-slot:header>
-                Recover Lost Jobs
+                Purge All
             </template>
 
             <template v-slot:body>
-                <div>
-                    <label for="minutes-ago">Minutes ago</label>
-                </div>
-                <input v-model="amount" id="minutes-ago" placeholder="Enter anount of minutes"/>
+                <div style="width: 250px">Are you sure?</div>
             </template>
 
             <template v-slot:footer>
-                <button @click="recoverLostJobs" :disabled="!amount || saving" class="btn btn-primary btn-sm">
+                <button @click="submitPurgeAll" :disabled="saving" class="btn btn-primary btn-sm">
                     <svg v-if="saving" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="icon spin mr-2 fill-text-color">
                         <path d="M12 10a2 2 0 0 1-3.41 1.41A2 2 0 0 1 10 8V0a9.97 9.97 0 0 1 10 10h-8zm7.9 1.41A10 10 0 1 1 8.59.1v2.03a8 8 0 1 0 9.29 9.29h2.02zm-4.07 0a6 6 0 1 1-7.25-7.25v2.1a3.99 3.99 0 0 0-1.4 6.57 4 4 0 0 0 6.56-1.42h2.1z"></path>
                     </svg>
-                    <span v-else>Recover</span>
+                    <span v-else>Confirm</span>
                 </button>
             </template>
         </Modal>
 
         <Modal
-            v-show="isFakeSignalModalVisible"
+            v-show="isRetryAllModalVisible"
             @close="closeModal"
         >
             <template v-slot:header>
-                Generate Fake Signal
+                Retry All
             </template>
 
             <template v-slot:body>
-                <div>
-                    <label for="fakeSignalAmount">Number of fake signals</label>
-                </div>
-                <input v-model="fakeSignalAmount" id="fakeSignalAmount" placeholder="For example: 100"/>
+                <div style="width: 250px">Are you sure?</div>
             </template>
 
             <template v-slot:footer>
-                <button @click="generateFakeSignal" :disabled="!fakeSignalAmount || saving" class="btn btn-primary btn-sm">
+                <button @click="submitRetryAll" :disabled="saving" class="btn btn-primary btn-sm">
                     <svg v-if="saving" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="icon spin mr-2 fill-text-color">
                         <path d="M12 10a2 2 0 0 1-3.41 1.41A2 2 0 0 1 10 8V0a9.97 9.97 0 0 1 10 10h-8zm7.9 1.41A10 10 0 1 1 8.59.1v2.03a8 8 0 1 0 9.29 9.29h2.02zm-4.07 0a6 6 0 1 1-7.25-7.25v2.1a3.99 3.99 0 0 0-1.4 6.57 4 4 0 0 0 6.56-1.42h2.1z"></path>
                     </svg>
-                    <span v-else>Generate</span>
+                    <span v-else>Confirm</span>
                 </button>
             </template>
         </Modal>
