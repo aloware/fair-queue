@@ -15,9 +15,12 @@ class DashboardStatsController extends Controller
     {
         $queues = FairQueue::queues();
         $totalJobs = FairQueue::totalJobsCount($queues);
+        $failedQueues = FairQueue::failedQueues();
+        $totalFailedJobs = FairQueue::totalFailedJobsCount($failedQueues);
 
         return response()->json([
             'totalJobs'  => $totalJobs,
+            'totalFailedJobs'  => $totalFailedJobs,
             'totalQueues' => count($queues),
         ]);
     }

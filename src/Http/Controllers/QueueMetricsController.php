@@ -32,6 +32,18 @@ class QueueMetricsController extends Controller
     }
 
     /**
+     * Get the failed jobs of a partition.
+     *
+     * @return array
+     */
+
+    public function failedPartitionJobs(PartitionJobsRequest $request, $queue, $partition)
+    {
+        $jobs = FairQueue::failedJobs($queue, $partition);
+        return response()->json($jobs);
+    }
+
+    /**
      * Get job payload.
      *
      * @return object
@@ -40,6 +52,18 @@ class QueueMetricsController extends Controller
     public function jobPreview($queue, $partition, $index)
     {
         $job = FairQueue::job($queue, $partition, $index);
+        return response()->json($job);
+    }
+
+    /**
+     * Get failed-job payload.
+     *
+     * @return object
+     */
+
+    public function failedJobPreview($queue, $partition, $index)
+    {
+        $job = FairQueue::failedJob($queue, $partition, $index);
         return response()->json($job);
     }
 
