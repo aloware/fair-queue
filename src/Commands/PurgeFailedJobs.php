@@ -5,21 +5,21 @@ namespace Aloware\FairQueue\Commands;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Illuminate\Console\Command;
 
-class RecoverLostJobs extends Command
+class PurgeFailedJobs extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'fair-queue:recover-lost-jobs {age=300}';
+    protected $signature = 'fair-queue:purge-failed-jobs';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Tries to recover jobs which have been on in-progress mode for a long time.';
+    protected $description = 'Purge failed jobs.';
 
     /**
      * @var RepositoryInterface
@@ -45,13 +45,9 @@ class RecoverLostJobs extends Command
      */
     public function handle()
     {
-        $age = intval($this->argument('age'));
+        $this->repository->purgeFailedJobs();
 
-        $this->info(sprintf('> recovering dusted jobs older than %d seconds', $age));
-
-        $count = $this->repository->recoverLost($age);
-
-        $this->info(sprintf('> %d jobs recovered', $count));
+        $this->info('> failed jobs purged');
 
         return 0;
     }

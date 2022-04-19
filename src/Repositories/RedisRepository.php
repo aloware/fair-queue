@@ -151,10 +151,41 @@ class RedisRepository implements RepositoryInterface
 
     public function retryFailedJobs()
     {
+        $count = 0;
+
+        $queues = $this->failedQueues();
+
+        foreach ($queues as $queue) {
+            $partitions = $this->failedPartitions($queue);
+
+            $queueSize = 0;
+            foreach ($partitions as $partition) {
+                while ($job = $this->popFailed($queue, $partition)) {
+                    $this->push($queue, $partition, $job);
+                    $queueSize++;
+                    $count++;
+                }
+            }
+
+            $this->generateFakeSignals($queue, $queueSize);
+        }
+
+        return $count;
     }
 
     public function purgeFailedJobs()
     {
+        $redis = $this->getConnection();
+
+        $queues = $this->failedQueues();
+
+        foreach ($queues as $queue) {
+            $partitions = $this->failedPartitions($queue);
+
+            foreach ($partitions as $partition) {
+                $redis->del($this->failedPartitionKey($queue, $partition));
+            }
+        }
     }
 
     public function recoverLost($age = 300)
