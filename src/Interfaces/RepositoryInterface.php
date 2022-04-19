@@ -31,17 +31,23 @@ interface RepositoryInterface
 
     public function partitionsWithCount($queue);
 
+    public function jobs($queue, $partition);
+
+    public function job($queue, $partition, $index);
+
+    public function totalJobsCount($queues);
+
     public function failedQueues();
 
     public function failedQueuesWithPartitions();
 
     public function failedPartitionsWithCount($queue);
 
-    public function jobs($queue, $partition);
+    public function failedJobs($queue, $partition);
 
-    public function job($queue, $partition, $index);
+    public function failedJob($queue, $partition, $index);
 
-    public function totalJobsCount($queues);
+    public function totalFailedJobsCount($queues);
 
     public function retryFailedJobs();
 

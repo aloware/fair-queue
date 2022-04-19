@@ -26,6 +26,16 @@ class RedisRepository implements RepositoryInterface
         return $this->queuesWithPartitionsPrivate('queues', 'partitions');
     }
 
+    public function jobs($queue, $partition)
+    {
+        return $this->jobsPrivate($queue, $partition, 'partitionKey');
+    }
+
+    public function job($queue, $partition, $index)
+    {
+        return $this->jobPrivate($queue, $partition, $index, 'partitionKey');
+    }
+
     public function partitionsWithCount($queue)
     {
         return $this->partitionsWithCountPrivate(
@@ -36,6 +46,11 @@ class RedisRepository implements RepositoryInterface
             'partitionPerSecKey',
             true
         );
+    }
+
+    public function totalJobsCount($queues)
+    {
+        return $this->totalJobsCountPrivate($queues, 'partitions', 'partitionKey');
     }
 
     public function failedPartitions($queue)
@@ -69,63 +84,19 @@ class RedisRepository implements RepositoryInterface
         );
     }
 
-    public function totalJobsCount($queues)
+    public function failedJobs($queue, $partition)
     {
-        $redis = $this->getConnection();
-
-        $jobsCount = 0;
-
-        foreach ($queues as $queue) {
-            foreach ($this->partitions($queue) as $partition) {
-                $jobsCount += $redis->llen($this->partitionKey($queue, $partition));
-            }
-        }
-
-        return $jobsCount;
+        return $this->jobsPrivate($queue, $partition, 'failedPartitionKey');
     }
 
-    public function jobs($queue, $partition)
+    public function failedJob($queue, $partition, $index)
     {
-        $redis      = $this->getConnection();
-        $perPage    = request('limit', 25);
-        $startingAt = request('starting_at', 0);
-
-        $partitionKey = $this->partitionKey($queue, $partition);
-
-        $jobs           = $redis->lrange($partitionKey, $startingAt, $perPage + $startingAt);
-        $jobsTotalPages = ceil(count($redis->lrange($partitionKey, 0, -1)) / $perPage);
-
-        $jobsArray = [];
-
-        foreach ($jobs as $index => $job) {
-            $jobsArray[] = [
-                'id'   => $index + $startingAt,
-                'name' => get_class(unserialize($job))
-            ];
-        }
-
-        $hasMore = count($jobs) > $perPage;
-
-        if ($hasMore) {
-            array_pop($jobsArray);
-        }
-
-        return [
-            'jobs'     => $jobsArray,
-            'has_more' => $hasMore,
-            'total'    => $jobsTotalPages
-        ];
+        return $this->jobPrivate($queue, $partition, $index, 'failedPartitionKey');
     }
 
-    public function job($queue, $partition, $index)
+    public function totalFailedJobsCount($queues)
     {
-        $redis = $this->getConnection();
-
-        $partitionKey = $this->partitionKey($queue, $partition);
-
-        $jobs = $redis->lrange($partitionKey, $index, $index);
-
-        return $jobs ? $jobs[0] : null;
+        return $this->totalJobsCountPrivate($queues, 'failedPartitions', 'failedPartitionKey');
     }
 
     public function push($queue, $partition, $job)
@@ -331,6 +302,68 @@ class RedisRepository implements RepositoryInterface
         }
 
         return $partitions;
+    }
+
+    private function jobsPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')
+    {
+        $redis      = $this->getConnection();
+        $perPage    = request('limit', 25);
+        $startingAt = request('starting_at', 0);
+
+        $partitionKey = $this->$partitionKeyResolver($queue, $partition);
+
+        $jobs           = $redis->lrange($partitionKey, $startingAt, $perPage + $startingAt);
+        $jobsTotalPages = ceil(count($redis->lrange($partitionKey, 0, -1)) / $perPage);
+
+        $jobsArray = [];
+
+        foreach ($jobs as $index => $job) {
+            $jobsArray[] = [
+                'id'   => $index + $startingAt,
+                'name' => get_class(unserialize($job))
+            ];
+        }
+
+        $hasMore = count($jobs) > $perPage;
+
+        if ($hasMore) {
+            array_pop($jobsArray);
+        }
+
+        return [
+            'jobs'     => $jobsArray,
+            'has_more' => $hasMore,
+            'total'    => $jobsTotalPages
+        ];
+    }
+
+    private function jobPrivate($queue, $partition, $index, $partitionKeyResolver = 'partitionKey')
+    {
+        $redis = $this->getConnection();
+
+        $partitionKey = $this->$partitionKeyResolver($queue, $partition);
+
+        $jobs = $redis->lrange($partitionKey, $index, $index);
+
+        return $jobs ? $jobs[0] : null;
+    }
+
+    private function totalJobsCountPrivate(
+        $queues,
+        $partitionsResolver = 'partitions',
+        $partitionKeyResolver = 'partitionKey'
+    ) {
+        $redis = $this->getConnection();
+
+        $jobsCount = 0;
+
+        foreach ($queues as $queue) {
+            foreach ($this->$partitionsResolver($queue) as $partition) {
+                $jobsCount += $redis->llen($this->$partitionKeyResolver($queue, $partition));
+            }
+        }
+
+        return $jobsCount;
     }
 
     private function popPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')
