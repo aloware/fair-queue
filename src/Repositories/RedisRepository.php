@@ -307,23 +307,23 @@ class RedisRepository implements RepositoryInterface
 
     private function partitionsWithCountPrivate(
         $queue,
-        $queuePartitionListPattern = 'queuePartitionListPattern',
-        $extractPartitionNameFromPartitionKey = 'extractPartitionNameFromPartitionKey',
-        $partitionKey = 'partitionKey',
-        $partitionPerSecKey = 'partitionPerSecKey',
+        $queuePartitionListPatternResolver = 'queuePartitionListPattern',
+        $extractPartitionNameFromPartitionKeyResolver = 'extractPartitionNameFromPartitionKey',
+        $partitionKeyResolver = 'partitionKey',
+        $partitionPerSecKeyResolver = 'partitionPerSecKey',
         $includePartitionPerSecKeyColumn = true
     ) {
         $redis = $this->getConnection();
 
-        $pattern = $this->$queuePartitionListPattern($queue);
+        $pattern = $this->$queuePartitionListPatternResolver($queue);
 
         $keys       = $redis->keys($pattern);
         $partitions = [];
 
         foreach ($keys as $key) {
-            $partition = $this->$extractPartitionNameFromPartitionKey($key);
+            $partition = $this->$extractPartitionNameFromPartitionKeyResolver($key);
 
-            $partitionKey = $this->$partitionKey($queue, $partition);
+            $partitionKey = $this->$partitionKeyResolver($queue, $partition);
 
             $item = [
                 'name'  => $partition,
@@ -331,7 +331,7 @@ class RedisRepository implements RepositoryInterface
             ];
 
             if ($includePartitionPerSecKeyColumn) {
-                $partitionPerSecKey = $this->$partitionPerSecKey($queue, $partition);
+                $partitionPerSecKey = $this->$partitionPerSecKeyResolver($queue, $partition);
 
                 list ($lastAccess, $lastPersec) = explode(',', $redis->get($partitionPerSecKey) ?? '0,0');
 
