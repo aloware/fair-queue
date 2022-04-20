@@ -34,7 +34,10 @@ class QueueController extends Controller
 
     public function retryFailedJobs()
     {
-        FairQueue::retryFailedJobs();
+        $count = FairQueue::retryFailedJobs();
+        return response()->json([
+            'count' => $count
+        ]);
     }
 
     public function purgeFailedJobs()
