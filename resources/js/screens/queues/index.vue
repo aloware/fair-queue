@@ -31,14 +31,24 @@
 
             this.loadQueues();
 
+            this.refreshQueuesPeriodically();
+        },
+
+        /**
+         * Clean after the component is destroyed.
+         */
+        destroyed() {
+            clearInterval(this.queuesInterval);
         },
 
         methods: {
             /**
              * Load the monitored queues.
              */
-            loadQueues(starting = 0) {
-                this.ready = false;
+            loadQueues(starting = 0, refreshing = false) {
+                if(!refreshing) {
+                    this.ready = false;
+                }
 
                 this.$http.get(FairQueue.basePath + '/api/monitoring?starting_at=' + starting + '&limit=' + this.perPage)
                     .then(response => {
@@ -47,17 +57,31 @@
                         this.ready = true;
                     });
             },
+            /**
+             * Refresh the queues every period of time.
+             */
+            refreshQueuesPeriodically() {
+                this.queuesInterval = setInterval(() => {
+                    if(this.ready) {
+                        this.loadQueues(0, true);
+                    }
+                }, 3000);
+            },
+
             closeModal() {
                 this.isModalVisible = false;
                 this.isFakeSignalModalVisible = false;
             },
+
             showFakeSignalModal(queue) {
                 this.isFakeSignalModalVisible = true
                 this.selectedQueue = queue
             },
+
             showRecoverFailedJobsModal(queue) {
                 this.isModalVisible = true
             },
+
             generateFakeSignal() {
                 this.saving = true;
                 this.$http.post(FairQueue.basePath + '/api/fake-signal/' + this.selectedQueue + '?amount=' + this.fakeSignalAmount)
@@ -71,6 +95,7 @@
                         this.saving = false;
                     });
             },
+
             recoverLostJobs() {
                 this.saving = true;
                 this.$http.post(FairQueue.basePath + '/api/recover-lost-jobs?amount=' + this.amount)
@@ -144,9 +169,9 @@
 
             <template v-slot:body>
                 <div>
-                    <label for="minutes-ago">Minutes ago</label>
+                    <label for="minutes-ago">Age (minutes)</label>
                 </div>
-                <input v-model="amount" id="minutes-ago" placeholder="Enter anount of minutes"/>
+                <input v-model="amount" type="number" id="minutes-ago" autocomplete="off" placeholder="Enter anount of minutes"/>
             </template>
 
             <template v-slot:footer>
@@ -171,7 +196,7 @@
                 <div>
                     <label for="fakeSignalAmount">Number of fake signals</label>
                 </div>
-                <input v-model="fakeSignalAmount" id="fakeSignalAmount" placeholder="For example: 100"/>
+                <input v-model="fakeSignalAmount" type="number" id="fakeSignalAmount" autocomplete="off" placeholder="For example: 100"/>
             </template>
 
             <template v-slot:footer>
