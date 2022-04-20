@@ -53,14 +53,14 @@
             },
             showFakeSignalModal(queue) {
                 this.isFakeSignalModalVisible = true
-                this.queue = queue
+                this.selectedQueue = queue
             },
             showRecoverFailedJobsModal(queue) {
                 this.isModalVisible = true
             },
             generateFakeSignal() {
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/fake-signal/' + this.selectedQueue + 'generate?amount=' + this.fakeSignalAmount)
+                this.$http.post(FairQueue.basePath + '/api/fake-signal/' + this.selectedQueue + '?amount=' + this.fakeSignalAmount)
                     .then(response => {
                         this.saving = false;
                         this.closeModal();

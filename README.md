@@ -11,11 +11,11 @@ composer require aloware/fair-queue
 Run the following command to publish assets and config file:
 
 ```sh
-php artisan fair-queue publish
+php artisan fair-queue:publish
 ```
 
 ## Usage
-This package uses Redis as data storage. By default it uses `default` 
+This package uses Redis as data storage. By default it uses `default`
 redis connection. You may configure to use another connection within
 the fair-queue config file or by setting in the environment file.
 
