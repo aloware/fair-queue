@@ -85,7 +85,9 @@
                     if (this.page != 1) {
                         return;
                     }
-                    this.loadPartitions(this.$route.params.queue, 0, true);
+                    if(this.ready) {
+                        this.loadPartitions(this.$route.params.queue, 0, true);
+                    }
                 }, 3000);
             },
 

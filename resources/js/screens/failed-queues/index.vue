@@ -28,14 +28,24 @@
 
             this.loadQueues();
 
+            this.refreshQueuesPeriodically()
+        },
+
+        /**
+         * Clean after the component is destroyed.
+         */
+        destroyed() {
+            clearInterval(this.failedQueuesInterval);
         },
 
         methods: {
             /**
              * Load the monitored queues.
              */
-            loadQueues(starting = 0) {
-                this.ready = false;
+            loadQueues(starting = 0, refreshing = false) {
+                if(!refreshing) {
+                    this.ready = false;
+                }
 
                 this.$http.get(FairQueue.basePath + '/api/failed-queues?starting_at=' + starting + '&limit=' + this.perPage)
                     .then(response => {
@@ -43,6 +53,16 @@
 
                         this.ready = true;
                     });
+            },
+            /**
+             * Refresh the failed-queues every period of time.
+             */
+            refreshQueuesPeriodically() {
+                this.failedQueuesInterval = setInterval(() => {
+                    if(this.ready) {
+                        this.loadQueues(0, true);
+                    }
+                }, 3000);
             },
             closeModal() {
                 this.isModalVisible = false;
@@ -60,7 +80,7 @@
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
-                        this.$toasted.show('Process was successful');
+                        this.$toasted.show(response.data.count + ' Jobs Returned to The Queue');
                     })
                     .catch(error => {
                         this.saving = false;
@@ -72,7 +92,8 @@
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
-                        this.$toasted.show('Process was successful');
+                        this.loadQueues();
+                        this.$toasted.show('Failed Jobs Purged Successfully');
                     })
                     .catch(error => {
                         this.saving = false;
@@ -104,7 +125,7 @@
 
 
             <div v-if="ready && queues.length == 0" class="d-flex flex-column align-items-center justify-content-center card-bg-secondary p-5 bottom-radius">
-                <span>You're not monitoring any queues.</span>
+                <span>You're not monitoring any failed-queues.</span>
             </div>
 
             <table v-if="ready && queues.length > 0" class="table table-hover table-sm mb-0">
