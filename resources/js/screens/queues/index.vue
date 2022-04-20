@@ -67,6 +67,7 @@
                         this.$toasted.show('Fake Signals Generated Successfully');
                     })
                     .catch(error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
                         this.saving = false;
                     });
             },
@@ -79,6 +80,7 @@
                         this.$toasted.show(response.data.recovered + ' Jobs Recovered');
                     })
                     .catch(error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
                         this.saving = false;
                     });
             }
