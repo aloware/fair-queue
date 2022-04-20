@@ -68,6 +68,12 @@ class FairSignalJob implements ShouldQueue
 
             // this will be retried later from failed job partitions
 
+            $job->exception = [
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'error' => $e->getMessage()
+            ];
+
             $jobSerialized = serialize($job);
 
             if ($job->tries >= $job->maxTries) {

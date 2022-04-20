@@ -18,6 +18,8 @@ trait FairDispatchable
 
     public $tries = 0;
 
+    public $exception;
+
     public static function dispatch(...$arguments)
     {
         $job = new FairSignalJob(new static(...$arguments));
