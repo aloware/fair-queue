@@ -3,6 +3,8 @@
 namespace Aloware\FairQueue\Http\Controllers;
 
 use Aloware\FairQueue\Facades\FairQueue;
+use Aloware\FairQueue\Http\Requests\FakeSignalRequest;
+use Aloware\FairQueue\Http\Requests\RecoverLostJobsRequest;
 
 class QueueController extends Controller
 {
@@ -11,10 +13,9 @@ class QueueController extends Controller
      *
      * @return array
      */
-    public function generateFakeSignal($queue)
+    public function generateFakeSignal(FakeSignalRequest $request, $queue)
     {
-        $amount = request('amount', null);
-        FairQueue::generateFakeSignals($queue, $amount);
+        FairQueue::generateFakeSignals($queue, $request->amount);
     }
 
     /**
@@ -22,10 +23,9 @@ class QueueController extends Controller
      *
      * @return array
      */
-    public function recoverLostJobs()
+    public function recoverLostJobs(RecoverLostJobsRequest $request)
     {
-        $amount = request('amount', null);
-        $recovered_count = FairQueue::recoverLost($amount);
+        $recovered_count = FairQueue::recoverLost($request->amount);
 
         return response()->json([
             'recovered' => $recovered_count
