@@ -243,11 +243,11 @@ class RedisRepository implements RepositoryInterface
 
         $sampleSignalKey = $this->queueSampleSignalKey($queue);
 
-        list ($connection, $queue) = unserialize($redis->get($sampleSignalKey) ?? serialize(['', '']));
+        list ($connection, $_queue) = unserialize($redis->get($sampleSignalKey) ?? serialize(['', '']));
 
-        if (empty($queue)) {
-            throw new SampleNotFoundException($queue);
-        }
+//        if (empty($_queue)) {
+//            throw new SampleNotFoundException($queue);
+//        }
 
         for ($i = 1; $i <= $count; $i++) {
             $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
