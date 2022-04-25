@@ -4,9 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('api')->group(function () {
     // Dashboard Routes...
-    Route::get('/abc', function() {
-        return 'Fair Queue Works';
-    });
     Route::get('/stats', 'DashboardStatsController@index')->name('fairqueue.stats.index');
 
     // Monitoring Routes...
