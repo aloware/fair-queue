@@ -76,7 +76,7 @@
             },
             submitRetryAll() {
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/jobs/retry-failed-jobs/')
+                this.$http.post(FairQueue.basePath + '/api/jobs/retry-failed-jobs')
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
@@ -88,7 +88,7 @@
             },
             submitPurgeAll() {
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/jobs/purge-failed-jobs/')
+                this.$http.post(FairQueue.basePath + '/api/jobs/purge-failed-jobs')
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
