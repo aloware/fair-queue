@@ -3,6 +3,7 @@
 namespace Aloware\FairQueue\Http\Controllers;
 
 use Illuminate\Routing\Controller as BaseController;
+use Laravel\Horizon\Http\Middleware\Authenticate;
 
 class Controller extends BaseController
 {
@@ -13,5 +14,6 @@ class Controller extends BaseController
      */
     public function __construct()
     {
+        $this->middleware(Authenticate::class);
     }
 }
