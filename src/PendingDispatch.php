@@ -23,13 +23,18 @@ class PendingDispatch extends \Illuminate\Foundation\Bus\PendingDispatch
 
     public function tries($number = 1)
     {
-        $this->job->originalJob->maxTries = max(intval($number), 1);
+        $this->job->originalJob->maxTries = max((int) $number, 1);
 
         return $this;
     }
 
     public function __destruct()
     {
+        if (!config('fair-queue.enabled')) {
+            app(Dispatcher::class)->dispatch($this->job->originalJob);
+            return ;
+        }
+
         $this->job->addToPartition();
 
         app(Dispatcher::class)->dispatch($this->job);
