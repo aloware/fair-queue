@@ -76,7 +76,11 @@ class FairSignalJob implements ShouldQueue
 
             $jobSerialized = serialize($job);
 
-            $maxTries = $job->maxTries ?? 1;
+            $maxTries = $job->maxTries ?? false;
+
+            if(!$maxTries) {
+                $maxTries = $this->getQueueTries($this->queue) ?? 1;
+            }
 
             if ($job->tries >= $maxTries) {
                 $repository->pushFailed($this->queue, $partition, $jobSerialized);
@@ -91,6 +95,23 @@ class FairSignalJob implements ShouldQueue
                 $repository->acknowledge($this->connection, $this->queue, $partition, $job->uuid);
             }
         }
+    }
+
+    public function getQueueTries($queue)
+    {
+        if(!$queue) {
+            $queue = 'default';
+        }
+
+        // get queue tries from fair-queue config
+        $tries = config("fair-queue.queues.{$queue}.tries");
+
+        // sanity check
+        if(!$tries) {
+            $tries = config('fair-queue.queues.default.tries');
+        }
+
+        return $tries;
     }
 
     public function addToPartition()
