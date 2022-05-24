@@ -54,7 +54,7 @@ trait RedisKeys
     private function queueListPattern()
     {
         return sprintf(
-            '*%s:*',
+            '%s:*',
             $this->fairQueueKeyPrefix()
         );
     }
@@ -62,7 +62,7 @@ trait RedisKeys
     private function queuePartitionListPattern($queue)
     {
         return sprintf(
-            '*%s:%s:*',
+            '%s:%s:*',
             $this->fairQueueKeyPrefix(),
             $queue
         );
@@ -71,7 +71,7 @@ trait RedisKeys
     private function failedQueuePartitionListPattern($queue)
     {
         return sprintf(
-            '*%s-failed:%s:*',
+            '%s-failed:%s:*',
             $this->fairQueueKeyPrefix(),
             $queue
         );
@@ -80,7 +80,7 @@ trait RedisKeys
     private function failedQueueListPattern()
     {
         return sprintf(
-            '*%s-failed:*',
+            '%s-failed:*',
             $this->fairQueueKeyPrefix()
         );
     }
@@ -88,7 +88,7 @@ trait RedisKeys
     private function failedPartitionListPattern($queue)
     {
         return sprintf(
-            '*%s-failed:%s:*',
+            '%s-failed:%s:*',
             $this->fairQueueKeyPrefix(),
             $queue
         );
@@ -97,7 +97,7 @@ trait RedisKeys
     private function inProgressJobsPattern()
     {
         return sprintf(
-            '*%s-inprogress:*',
+            '%s-inprogress:*',
             $this->fairQueueKeyPrefix()
         );
     }
