@@ -7,15 +7,20 @@ use Aloware\FairQueue\Commands\Publish;
 use Aloware\FairQueue\Commands\PurgeFailedJobs;
 use Aloware\FairQueue\Commands\RecoverLostJobs;
 use Aloware\FairQueue\Commands\RetryFailedJobs;
+use Aloware\FairQueue\Commands\RefreshStats;
 use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Repositories\RedisRepository;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
+use Aloware\FairQueue\Repositories\RedisKeys;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Queue\Events\JobProcessed;
 
 class FairQueueServiceProvider extends ServiceProvider
 {
+    use RedisKeys;
     /**
      * Register the service provider.
      *
@@ -43,17 +48,21 @@ class FairQueueServiceProvider extends ServiceProvider
             GenerateSignal::class,
             RetryFailedJobs::class,
             PurgeFailedJobs::class,
+            RefreshStats::class,
         ]);
 
         $this->registerRoutes();
         $this->registerResources();
         $this->publishAssets();
+        $this->registerQueueEvents();
 
         $this->app->booted(function () {
             /** @var Schedule $schedule */
             $schedule = $this->app->make(Schedule::class);
 
             $schedule->command(RecoverLostJobs::class)->hourly();
+            $schedule->command(RecoverLostJobs::class)->hourly();
+            $schedule->command(RefreshStats::class)->everyMinute();
         });
     }
 
@@ -70,6 +79,30 @@ class FairQueueServiceProvider extends ServiceProvider
             'middleware' => config('fair-queue.middleware', 'web'),
         ], function () {
             $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+        });
+    }
+
+    /**
+     * Register the FairQueue Queue Events.
+     *
+     * @return void
+     */
+    protected function registerQueueEvents(): void
+    {
+        Queue::after(function (JobProcessed $event) {
+            $redis = FairQueue::getConnection();
+            $payload = $event->job->payload();
+            $command = unserialize($payload['data']['command']);
+            if(!$command instanceof FairSignalJob)
+                return;
+            $queue = $command->queue;
+            $partition = $command->partition;
+            $past_minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 1);
+            $past_20minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 20);
+            $past_60minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 60);
+            $redis->zadd($past_minute_key, now()->getPreciseTimestamp(3), $payload['id']);
+            $redis->zadd($past_20minute_key, now()->getPreciseTimestamp(3), $payload['id']);
+            $redis->zadd($past_60minute_key, now()->getPreciseTimestamp(3), $payload['id']);
         });
     }
 
