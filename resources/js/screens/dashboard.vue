@@ -182,6 +182,39 @@
                     </div>
                 </div>
             </div>
+            <div class="card-bg-secondary">
+                <div class="d-flex">
+                    <div class="w-50 border-right border-bottom">
+                        <div class="p-4">
+                            <small class="text-uppercase">Processed Jobs Past Minute</small>
+
+                            <h4 class="mt-4 mb-0">
+                                {{ stats.processedJobsInPastMinute ? stats.processedJobsInPastMinute.toLocaleString() : 0 }}
+                            </h4>
+                        </div>
+                    </div>
+
+                    <div class="w-50 border-right border-bottom">
+                        <div class="p-4">
+                            <small class="text-uppercase">Processed Jobs Past 20 Minutes</small>
+
+                            <h4 class="mt-4 mb-0">
+                                {{ stats.processedJobsInPast20Minutes ? stats.processedJobsInPast20Minutes.toLocaleString() : 0 }}
+                            </h4>
+                        </div>
+                    </div>
+
+                    <div class="w-50 border-right border-bottom">
+                        <div class="p-4">
+                            <small class="text-uppercase">Processed Jobs Past Hour</small>
+
+                            <h4 class="mt-4 mb-0">
+                                {{ stats.processedJobsInPastHour ? stats.processedJobsInPastHour.toLocaleString() : 0 }}
+                            </h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="card mt-4" v-if="workload.length">

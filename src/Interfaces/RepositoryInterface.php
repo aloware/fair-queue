@@ -37,6 +37,8 @@ interface RepositoryInterface
 
     public function totalJobsCount($queues);
 
+    public function processedJobsInPastMinutes($queues, $minutes);
+
     public function failedQueues();
 
     public function failedQueuesWithPartitions();
@@ -54,6 +56,8 @@ interface RepositoryInterface
     public function purgeFailedJobs();
 
     public function recoverLost($age = 300);
+
+    public function getConnection();
 
     /**
      * @throws SampleNotFoundException

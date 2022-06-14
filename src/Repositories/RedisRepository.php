@@ -53,6 +53,19 @@ class RedisRepository implements RepositoryInterface
         return $this->totalJobsCountPrivate($queues, 'partitions', 'partitionKey');
     }
 
+    public function processedJobsInPastMinutes($queues, $minutes)
+    {
+        $redis = $this->getConnection();
+
+        $total = 0;
+        foreach($queues as $queue)
+        {
+            $queue_key = $this->queueProcessedJobsInPastMinutesKey($queue, $minutes);
+            $total += $redis->zcard($queue_key);
+        }
+        return $total;
+    }
+
     public function failedPartitions($queue)
     {
         return $this->partitionsPrivate(
@@ -202,7 +215,7 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $pattern = $this->inProgressJobsPattern();
-        $keys    = $redis->keys($pattern);
+        $keys = $redis->keys($pattern);
 
         $count = 0;
 
@@ -317,7 +330,7 @@ class RedisRepository implements RepositoryInterface
 
         $pattern = $this->$queuePartitionListPatternResolver($queue);
 
-        $keys       = $redis->keys($pattern);
+        $keys = $redis->keys($pattern);
         $partitions = [];
 
         foreach ($keys as $key) {
@@ -346,8 +359,8 @@ class RedisRepository implements RepositoryInterface
 
     private function jobsPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')
     {
-        $redis      = $this->getConnection();
-        $perPage    = request('limit', 25);
+        $redis = $this->getConnection();
+        $perPage = request('limit', 25);
         $startingAt = request('starting_at', 0);
 
         $partitionKey = $this->$partitionKeyResolver($queue, $partition);
@@ -433,7 +446,7 @@ class RedisRepository implements RepositoryInterface
         return $redis->lpop($partitionKey);
     }
 
-    private function getConnection()
+    public function getConnection()
     {
         $database = config('fair-queue.database');
         return Redis::connection($database);

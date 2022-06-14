@@ -15,6 +15,16 @@ trait RedisKeys
         );
     }
 
+    private function queueKey($queue, $prefix = '')
+    {
+        return sprintf(
+            '%s%s:*:%s',
+            $this->fairQueueKeyPrefix(),
+            $prefix,
+            $queue
+        );
+    }
+
     private function failedPartitionKey($queue, $partition)
     {
         return $this->partitionKey($queue, $partition, '-failed');
@@ -23,6 +33,26 @@ trait RedisKeys
     private function partitionProcessedCountJobKey($queue, $partition)
     {
         return $this->partitionKey($queue, $partition, '-internal') . ':processed';
+    }
+
+    private function queueProcessedJobsInPastMinutesKey($queue, $minutes = 1)
+    {
+        $queue_key = $this->queueKey($queue, '-internal');
+        return "{$queue_key}:processed:{$minutes}min";
+    }
+
+    private function partitionProcessedJobsInPastMinutesKey($queue, $partition, $minutes = 1)
+    {
+        $partition_key = $this->partitionKey($queue, $partition, '-internal');
+        return "{$partition_key}:processed:{$minutes}min";
+    }
+
+    private function recentProcesedJobsPattern($minute = 1)
+    {
+        return sprintf(
+            '%s-internal:*:processed:' . $minute . 'min*',
+            $this->fairQueueKeyPrefix()
+        );
     }
 
     private function partitionPerSecKey($queue, $partition)
