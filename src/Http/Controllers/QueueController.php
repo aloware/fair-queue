@@ -40,6 +40,33 @@ class QueueController extends Controller
         ]);
     }
 
+    /**
+     * Retry Lost Jobs of a Specific Partition
+     *
+     * @return array
+     */
+    public function retryPartitionFailedJobs($queue, $partition)
+    {
+        $count = FairQueue::retryPartitionFailedJobs($queue, $partition);
+        return response()->json([
+            'count' => $count
+        ]);
+    }
+
+    /**
+     * Recover Lost Jobs of a Specific Partition
+     *
+     * @return array
+     */
+    public function recoverPartitionLostJobs($queue, $partition)
+    {
+        $recovered_count = FairQueue::recoverPartitionLost($queue, $partition, request()->amount);
+
+        return response()->json([
+            'recovered' => $recovered_count
+        ]);
+    }
+
     public function purgeFailedJobs()
     {
         FairQueue::purgeFailedJobs();

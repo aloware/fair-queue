@@ -10,6 +10,7 @@
         data() {
             return {
                 ready: false,
+                saving: false,
                 loadingNewEntries: false,
                 hasNewEntries: false,
                 isModalVisible: false,
@@ -17,6 +18,7 @@
                 page: 1,
                 perPage: 3,
                 totalPages: 1,
+                selectedPartition: null,
                 partitions: []
             };
         },
@@ -77,6 +79,20 @@
                     });
             },
 
+            submitRetryAll(partition) {
+                this.saving = true;
+                this.$http.post(FairQueue.basePath + '/api/queues/' + this.$route.params.queue + '/partitions/' + this.selectedPartition + '/retry-failed-jobs')
+                // this.$http.post(FairQueue.basePath + '/api/jobs/retry-failed-jobs')
+                    .then(response => {
+                        this.saving = false;
+                        this.closeModal();
+                        this.$toasted.show(response.data.count + ' Jobs Returned to The Queue');
+                    })
+                    .catch(error => {
+                        this.saving = false;
+                    });
+            },
+
             /**
              * Refresh the jobs every period of time.
              */
@@ -91,7 +107,8 @@
                 }, 3000);
             },
 
-            showModal() {
+            showModal(partition) {
+                this.selectedPartition = partition
                 this.isModalVisible = true;
             },
             closeModal() {
@@ -121,6 +138,7 @@
             <tr>
                 <th>Failed Partition Name</th>
                 <th>Number Of Jobs</th>
+                <th></th>
             </tr>
             </thead>
 
@@ -142,9 +160,34 @@
                 <td>
                     <span>{{ partition.count }}</span>
                 </td>
+                <td>
+                    <button @click="showModal(partition.name)" class="btn btn-primary btn-sm">Retry All</button>
+                </td>
             </tr>
             </tbody>
         </table>
+
+        <Modal
+            v-show="isModalVisible"
+            @close="closeModal"
+        >
+            <template v-slot:header>
+                Retry All
+            </template>
+
+            <template v-slot:body>
+                <div style="width: 250px">Are you sure?</div>
+            </template>
+
+            <template v-slot:footer>
+                <button @click="submitRetryAll" :disabled="saving" class="btn btn-primary btn-sm">
+                    <svg v-if="saving" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="icon spin mr-2 fill-text-color">
+                        <path d="M12 10a2 2 0 0 1-3.41 1.41A2 2 0 0 1 10 8V0a9.97 9.97 0 0 1 10 10h-8zm7.9 1.41A10 10 0 1 1 8.59.1v2.03a8 8 0 1 0 9.29 9.29h2.02zm-4.07 0a6 6 0 1 1-7.25-7.25v2.1a3.99 3.99 0 0 0-1.4 6.57 4 4 0 0 0 6.56-1.42h2.1z"></path>
+                    </svg>
+                    <span v-else>Confirm</span>
+                </button>
+            </template>
+        </Modal>
 
     </div>
 

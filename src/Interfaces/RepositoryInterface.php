@@ -53,6 +53,10 @@ interface RepositoryInterface
 
     public function retryFailedJobs();
 
+    public function retryPartitionFailedJobs($queue, $partition);
+
+    public function recoverPartitionLost($queue, $partition);
+
     public function purgeFailedJobs();
 
     public function recoverLost($age = 300);

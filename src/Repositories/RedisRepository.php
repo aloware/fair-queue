@@ -58,12 +58,21 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $total = 0;
-        foreach($queues as $queue)
+        $queue_key = $this->processedJobsInPastMinutesKey($minutes);
+        $keys = $redis->keys($queue_key);
+        foreach($keys as $key)
         {
-            $queue_key = $this->queueProcessedJobsInPastMinutesKey($queue, $minutes);
-            $total += $redis->zcard($queue_key);
+            $total += $redis->zcard($key);
         }
         return $total;
+    }
+
+    public function partitionProcessedJobsInPastMinutes($queue, $partition, $minutes)
+    {
+        $redis = $this->getConnection();
+
+        $partition_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, $minutes);
+        return $redis->zcard($partition_key);
     }
 
     public function failedPartitions($queue)
@@ -195,6 +204,23 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
+    public function retryPartitionFailedJobs($queue, $partition)
+    {
+        $count = 0;
+
+        $queueSize = 0;
+
+        while ($job = $this->popFailed($queue, $partition)) {
+            $this->push($queue, $partition, $job);
+            $queueSize++;
+            $count++;
+        }
+
+        $this->generateFakeSignals($queue, $queueSize);
+
+        return $count;
+    }
+
     public function purgeFailedJobs()
     {
         $redis = $this->getConnection();
@@ -215,6 +241,43 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $pattern = $this->inProgressJobsPattern();
+        $keys = $redis->keys($pattern);
+
+        $count = 0;
+
+        foreach ($keys as $key) {
+            list ($connection, $queue, $partition, $jobUuid) = $this->extractInProgressJobKey($key);
+
+            $inProgressJobKey = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
+
+            $lastAccess = $redis->object('idletime', $inProgressJobKey);
+            if ($lastAccess < $age) {
+                continue;
+            }
+
+            // restore the job into partition
+            $this->push($queue, $partition, $redis->get($inProgressJobKey));
+            //
+
+            // and generate fake signal
+            $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
+
+            if (!empty($connection)) {
+                $dispatch->onConnection($connection);
+            }
+            //
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    public function recoverPartitionLost($queue, $partition, $age = 300)
+    {
+        $redis = $this->getConnection();
+
+        $pattern = $this->partitionInProgressJobKey($queue, $partition);
         $keys = $redis->keys($pattern);
 
         $count = 0;
@@ -344,11 +407,7 @@ class RedisRepository implements RepositoryInterface
             ];
 
             if ($includePartitionPerSecKeyColumn) {
-                $partitionPerSecKey = $this->$partitionPerSecKeyResolver($queue, $partition);
-
-                list ($lastAccess, $lastPersec) = explode(',', $redis->get($partitionPerSecKey) ?? '0,0');
-
-                $item['per_second'] = $lastPersec;
+                $item['per_minute'] = $this->partitionProcessedJobsInPastMinutes($queue, $partition, 1);
             }
 
             $partitions[] = $item;
@@ -425,7 +484,7 @@ class RedisRepository implements RepositoryInterface
 
         $partitionKey = $this->$partitionKeyResolver($queue, $partition);
 
-        $processedKey       = $this->partitionProcessedCountJobKey($queue, $partition);
+        $processedKey = $this->partitionProcessedCountJobKey($queue, $partition);
         $partitionPerSecKey = $this->partitionPerSecKey($queue, $partition);
 
         $redis->incr($processedKey);
