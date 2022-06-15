@@ -18,7 +18,7 @@ trait RedisKeys
     private function queueKey($queue, $prefix = '')
     {
         return sprintf(
-            '%s%s:*:%s',
+            '%s%s:%s:*',
             $this->fairQueueKeyPrefix(),
             $prefix,
             $queue
@@ -38,6 +38,12 @@ trait RedisKeys
     private function queueProcessedJobsInPastMinutesKey($queue, $minutes = 1)
     {
         $queue_key = $this->queueKey($queue, '-internal');
+        return "{$queue_key}:processed:{$minutes}min";
+    }
+
+    private function processedJobsInPastMinutesKey($minutes = 1)
+    {
+        $queue_key = $this->queueKey('*', '-internal');
         return "{$queue_key}:processed:{$minutes}min";
     }
 
@@ -129,6 +135,15 @@ trait RedisKeys
         return sprintf(
             '%s-inprogress:*',
             $this->fairQueueKeyPrefix()
+        );
+    }
+
+    private function partitionInProgressJobKey($queue, $partition)
+    {
+        return sprintf(
+            '%s-inprogress:*:%s:%s',
+            $queue,
+            $partition
         );
     }
 
