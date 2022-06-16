@@ -140,6 +140,7 @@
                 <tr>
                     <th>Queue Name</th>
                     <th>Queue Partitions</th>
+                    <th>Number of Jobs</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -151,7 +152,8 @@
                             {{ queue.queue }}
                         </router-link>
                     </td>
-                    <td>{{ queue.count }}</td>
+                    <td>{{ queue.partitions_count }}</td>
+                    <td>{{ queue.jobs_count }}</td>
                     <td class="gen-btn">
                         <button @click="showFakeSignalModal(queue.queue)" class="btn btn-primary btn-sm">Fake Signal Gen</button>
                     </td>
