@@ -143,7 +143,7 @@
                             {{ queue.queue }}
                         </router-link>
                     </td>
-                    <td>{{ queue.count }}</td>
+                    <td>{{ queue.partitions_count }}</td>
                 </tr>
                 </tbody>
             </table>

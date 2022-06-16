@@ -358,7 +358,8 @@ class RedisRepository implements RepositoryInterface
         foreach ($this->$queuesResolver() as $queue) {
             $queues[] = [
                 'queue' => $queue,
-                'count' => count($this->$partitionsResolver($queue))
+                'partitions_count' => count($this->$partitionsResolver($queue)),
+                'jobs_count' => $this->totalJobsCount([$queue])
             ];
         }
 
