@@ -92,9 +92,13 @@ class FairQueueServiceProvider extends ServiceProvider
         Queue::after(function (JobProcessed $event) {
             $redis = FairQueue::getConnection();
             $payload = $event->job->payload();
-            $command = unserialize($payload['data']['command']);
-            if(!$command instanceof FairSignalJob)
+            if (!isset($payload['data']) || !isset($payload['data']['command'])) {
                 return;
+            }
+            $command = unserialize($payload['data']['command']);
+            if (!$command instanceof FairSignalJob) {
+                return;
+            }
             $queue = $command->queue;
             $partition = $command->partition;
             $past_minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 1);
