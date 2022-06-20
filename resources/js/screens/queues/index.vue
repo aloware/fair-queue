@@ -138,9 +138,11 @@
             <table v-if="ready && queues.length > 0" class="table table-hover table-sm mb-0">
                 <thead>
                 <tr>
-                    <th>Queue Name</th>
-                    <th>Queue Partitions</th>
-                    <th>Number of Jobs</th>
+                    <th>Queue</th>
+                    <th>Partitions</th>
+                    <th>Jobs</th>
+                    <th>Processed 1 Minute</th>
+                    <th>Processed 20 Minute</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -154,6 +156,8 @@
                     </td>
                     <td>{{ queue.partitions_count }}</td>
                     <td>{{ queue.jobs_count }}</td>
+                    <td>{{ queue.processed_jobs_count_1_min }}</td>
+                    <td>{{ queue.processed_jobs_count_20_min }}</td>
                     <td class="gen-btn">
                         <button @click="showFakeSignalModal(queue.queue)" class="btn btn-primary btn-sm">Fake Signal Gen</button>
                     </td>

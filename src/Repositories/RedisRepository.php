@@ -67,6 +67,20 @@ class RedisRepository implements RepositoryInterface
         return $total;
     }
 
+    public function queueProcessedJobsInPastMinutes($queue, $minutes)
+    {
+        $redis = $this->getConnection();
+
+        $total = 0;
+        $queue_key = $this->queueProcessedJobsInPastMinutesKey($queue, $minutes);
+        $keys = $redis->keys($queue_key);
+        foreach($keys as $key)
+        {
+            $total += $redis->zcard($key);
+        }
+        return $total;
+    }
+
     public function partitionProcessedJobsInPastMinutes($queue, $partition, $minutes)
     {
         $redis = $this->getConnection();
@@ -359,7 +373,9 @@ class RedisRepository implements RepositoryInterface
             $queues[] = [
                 'queue' => $queue,
                 'partitions_count' => count($this->$partitionsResolver($queue)),
-                'jobs_count' => $this->totalJobsCount([$queue])
+                'jobs_count' => $this->totalJobsCount([$queue]),
+                'processed_jobs_count_1_min' => $this->queueProcessedJobsInPastMinutes($queue, 1),
+                'processed_jobs_count_20_min' => $this->queueProcessedJobsInPastMinutes($queue, 20),
             ];
         }
 
