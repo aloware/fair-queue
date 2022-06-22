@@ -379,6 +379,10 @@ class RedisRepository implements RepositoryInterface
             ];
         }
 
+        usort($queues, function ($a, $b) {
+            return ($b['partitions_count'] < $a['partitions_count']) ? 1 : -1;
+        });
+
         return $queues;
     }
 
