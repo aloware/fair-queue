@@ -141,8 +141,8 @@
                     <th>Queue</th>
                     <th>Partitions</th>
                     <th>Jobs</th>
-                    <th>Processed 1 Minute</th>
-                    <th>Processed 20 Minute</th>
+                    <th>Processed In 1 Minute</th>
+                    <th>Processed In 20 Minutes</th>
                     <th></th>
                 </tr>
                 </thead>
