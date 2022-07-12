@@ -380,7 +380,7 @@ class RedisRepository implements RepositoryInterface
         }
 
         usort($queues, function ($a, $b) {
-            return ($b['partitions_count'] < $a['partitions_count']) ? 1 : -1;
+            return ($b['queue'] < $a['queue']) ? 1 : -1;
         });
 
         return $queues;
@@ -433,6 +433,10 @@ class RedisRepository implements RepositoryInterface
 
             $partitions[] = $item;
         }
+
+        usort($partitions, function ($a, $b) {
+            return ($b['name'] < $a['name']) ? 1 : -1;
+        });
 
         return $partitions;
     }
