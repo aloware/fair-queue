@@ -8,6 +8,18 @@ use Illuminate\Contracts\Bus\Dispatcher;
 class PendingDispatch extends \Illuminate\Foundation\Bus\PendingDispatch
 {
     /**
+     * Create a new pending job dispatch.
+     *
+     * @param  mixed $job
+     * @return void
+     */
+    public function __construct($job)
+    {
+        $this->job = $job;
+        $this->job->onQueue(config('fair-queue.default_queue_name'));
+    }
+
+    /**
      * @throws EmptyPartitionNameException
      */
     public function fairConsume($partition)
