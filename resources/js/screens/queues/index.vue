@@ -55,6 +55,9 @@
                         this.queues = response.data;
 
                         this.ready = true;
+                    }).catch( error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
+                         this.ready = true;
                     });
             },
             /**

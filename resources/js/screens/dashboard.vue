@@ -63,6 +63,9 @@
                             this.stats.max_wait_time = _.values(response.data.wait)[0];
                             this.stats.max_wait_queue = _.keys(response.data.wait)[0].split(':')[1];
                         }
+                    }).catch( error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
+                        this.ready = true;
                     });
             },
 
@@ -74,6 +77,9 @@
                 return this.$http.get(FairQueue.basePath + '/api/masters')
                     .then(response => {
                         this.workers = response.data;
+                    }).catch( error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
+                        this.ready = true;
                     });
             },
 
@@ -85,6 +91,9 @@
                 return this.$http.get(FairQueue.basePath + '/api/workload')
                     .then(response => {
                         this.workload = response.data;
+                    }).catch( error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
+                        this.ready = true;
                     });
             },
 

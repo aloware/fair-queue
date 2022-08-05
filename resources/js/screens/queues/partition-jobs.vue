@@ -68,6 +68,9 @@
                         }
 
                         this.ready = true;
+                    }).catch( error => {
+                        this.ready = true;
+                        this.$toasted.show('Error: ' + error.response.data.message);
                     });
             },
 
