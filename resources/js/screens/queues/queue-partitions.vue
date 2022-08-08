@@ -1,5 +1,5 @@
 <script type="text/ecmascript-6">
-    import Modal from '../..//components/Modal.vue';
+    import Modal from '../../components/Modal.vue';
     export default {
         props: ['type'],
         components: {Modal},
@@ -124,6 +124,7 @@
             <tr>
                 <th>Partition Name</th>
                 <th>Number Of Jobs</th>
+                <th>ETA in Minutes</th>
                 <th>n/m</th>
             </tr>
             </thead>
@@ -145,6 +146,9 @@
                 </td>
                 <td>
                     <span>{{ partition.count }}</span>
+                </td>
+                <td>
+                    <span>{{ partition.eta }}</span>
                 </td>
                 <td>
                     <span>{{ partition.per_minute }}</span>
