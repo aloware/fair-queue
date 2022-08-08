@@ -422,14 +422,16 @@ class RedisRepository implements RepositoryInterface
 
             $partitionKey = $this->$partitionKeyResolver($queue, $partition);
 
-            $item = [
-                'name'  => $partition,
-                'count' => $redis->llen($partitionKey) ?: 0
-            ];
+            $count = $redis->llen($partitionKey) ?: 0;
+            $per_minute = $this->partitionProcessedJobsInPastMinutes($queue, $partition, 1);
+            $eta = $per_minute ? ($count / $per_minute) : 0;
 
-            if ($includePartitionPerSecKeyColumn) {
-                $item['per_minute'] = $this->partitionProcessedJobsInPastMinutes($queue, $partition, 1);
-            }
+            $item = [
+                'per_minute' => $per_minute,
+                'name'  => $partition,
+                'count' => $count,
+                'eta' => round($eta),
+            ];
 
             $partitions[] = $item;
         }
