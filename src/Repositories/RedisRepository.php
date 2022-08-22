@@ -255,6 +255,7 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $pattern = $this->inProgressJobsPattern();
+
         $keys = $redis->keys($pattern);
 
         $count = 0;
@@ -271,7 +272,6 @@ class RedisRepository implements RepositoryInterface
 
             // restore the job into partition
             $this->push($queue, $partition, $redis->get($inProgressJobKey));
-            //
 
             // and generate fake signal
             $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
@@ -279,7 +279,6 @@ class RedisRepository implements RepositoryInterface
             if (!empty($connection)) {
                 $dispatch->onConnection($connection);
             }
-            //
 
             $count++;
         }
