@@ -45,7 +45,7 @@ class RecoverLostJobs extends Command
      */
     public function handle()
     {
-        $age = intval($this->argument('age'));
+        $age = (int) $this->argument('age');
 
         $this->info(sprintf('> recovering dusted jobs older than %d seconds', $age));
 
