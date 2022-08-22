@@ -60,8 +60,14 @@ class FairQueueServiceProvider extends ServiceProvider
             /** @var Schedule $schedule */
             $schedule = $this->app->make(Schedule::class);
 
-            $schedule->command(RecoverLostJobs::class)->hourly();
-            $schedule->command(RecoverLostJobs::class)->hourly();
+            if ($this->app->environment() === 'production') {
+                // recover jobs for the last one hour
+                $schedule->command(RecoverLostJobs::class, [3600])->hourly();
+            } else {
+                // recover jobs for the last five minutes
+                $schedule->command(RecoverLostJobs::class, [300])->everyFiveMinutes();
+            }
+
             $schedule->command(RefreshStats::class)->everyMinute();
         });
     }
