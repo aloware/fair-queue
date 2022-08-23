@@ -6,6 +6,7 @@ use Aloware\FairQueue\Commands\GenerateSignal;
 use Aloware\FairQueue\Commands\Publish;
 use Aloware\FairQueue\Commands\PurgeFailedJobs;
 use Aloware\FairQueue\Commands\RecoverLostJobs;
+use Aloware\FairQueue\Commands\RecoverStuckJobs;
 use Aloware\FairQueue\Commands\RetryFailedJobs;
 use Aloware\FairQueue\Commands\RefreshStats;
 use Aloware\FairQueue\Facades\FairQueue;
@@ -45,6 +46,7 @@ class FairQueueServiceProvider extends ServiceProvider
         $this->commands([
             Publish::class,
             RecoverLostJobs::class,
+            RecoverStuckJobs::class,
             GenerateSignal::class,
             RetryFailedJobs::class,
             PurgeFailedJobs::class,
@@ -56,18 +58,12 @@ class FairQueueServiceProvider extends ServiceProvider
         $this->publishAssets();
         $this->registerQueueEvents();
 
-        $this->app->booted(function () {
-            /** @var Schedule $schedule */
-            $schedule = $this->app->make(Schedule::class);
-
-            if ($this->app->environment() === 'production') {
-                // recover jobs for the last one hour
-                $schedule->command(RecoverLostJobs::class, [3600])->hourly();
-            } else {
-                // recover jobs for the last five minutes
-                $schedule->command(RecoverLostJobs::class, [300])->everyFiveMinutes();
-            }
-
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
+            // recover lost jobs for the last one hour
+            $schedule->command(RecoverLostJobs::class, [3600])->hourly();
+            // recover stuck jobs
+            $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes();
+            // refresh stats for dashboard
             $schedule->command(RefreshStats::class)->everyMinute();
         });
     }
