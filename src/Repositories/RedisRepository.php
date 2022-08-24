@@ -255,6 +255,7 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $pattern = $this->inProgressJobsPattern();
+
         $keys = $redis->keys($pattern);
 
         $count = 0;
@@ -271,7 +272,6 @@ class RedisRepository implements RepositoryInterface
 
             // restore the job into partition
             $this->push($queue, $partition, $redis->get($inProgressJobKey));
-            //
 
             // and generate fake signal
             $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
@@ -279,7 +279,6 @@ class RedisRepository implements RepositoryInterface
             if (!empty($connection)) {
                 $dispatch->onConnection($connection);
             }
-            //
 
             $count++;
         }
@@ -308,7 +307,6 @@ class RedisRepository implements RepositoryInterface
 
             // restore the job into partition
             $this->push($queue, $partition, $redis->get($inProgressJobKey));
-            //
 
             // and generate fake signal
             $dispatch = dispatch(new FairSignalJob(null))->onQueue($queue);
@@ -316,9 +314,32 @@ class RedisRepository implements RepositoryInterface
             if (!empty($connection)) {
                 $dispatch->onConnection($connection);
             }
-            //
 
             $count++;
+        }
+
+        return $count;
+    }
+
+    public function recoverStuckJobs()
+    {
+        $redis = $this->getConnection();
+        $queues = $this->queues();
+
+        $count = 0;
+
+        foreach ($queues as $queue) {
+            $partitions = $this->partitions($queue);
+
+            $queueSize = 0;
+
+            foreach ($partitions as $partition) {
+                $queueSize += $redis->llen($this->partitionKey($queue, $partition));
+            }
+
+            $count += $queueSize;
+
+            $this->generateFakeSignals($queue, $queueSize);
         }
 
         return $count;

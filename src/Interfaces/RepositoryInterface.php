@@ -61,6 +61,8 @@ interface RepositoryInterface
 
     public function recoverLost($age = 300);
 
+    public function recoverStuckJobs();
+
     public function getConnection();
 
     /**
