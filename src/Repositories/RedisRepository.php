@@ -451,7 +451,7 @@ class RedisRepository implements RepositoryInterface
                 'per_minute' => $per_minute,
                 'name'  => $partition,
                 'count' => $count,
-                'eta' => round($eta),
+                'eta' => round($eta, 2),
             ];
 
             $partitions[] = $item;
