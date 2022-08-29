@@ -32,22 +32,17 @@ class QueueController extends Controller
         ]);
     }
 
-    public function retryFailedJobs()
-    {
-        $count = FairQueue::retryFailedJobs();
-        return response()->json([
-            'count' => $count
-        ]);
-    }
-
     /**
-     * Retry Lost Jobs of a Specific Partition
+     * Retry failed jobs
+     *
+     * @param string|null $queue
+     * @param string|null $partition
      *
      * @return array
      */
-    public function retryPartitionFailedJobs($queue, $partition)
+    public function retryFailedJobs($queue = null, $partition = null)
     {
-        $count = FairQueue::retryPartitionFailedJobs($queue, $partition);
+        $count = FairQueue::retryFailedJobs((array) $queue, (array) $partition);
         return response()->json([
             'count' => $count
         ]);
@@ -67,9 +62,9 @@ class QueueController extends Controller
         ]);
     }
 
-    public function purgeFailedJobs()
+    public function purgeFailedJobs($queue = null, $partition = null)
     {
-        FairQueue::purgeFailedJobs();
+        FairQueue::purgeFailedJobs((array) $queue, (array) $partition);
     }
 
 }

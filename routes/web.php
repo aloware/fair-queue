@@ -29,8 +29,8 @@ Route::prefix('api')->group(function () {
 
     Route::post('/fake-signal/{queue}', 'QueueController@generateFakeSignal')->name('fairqueue.fake-signal.generate');
     Route::post('/recover-lost-jobs', 'QueueController@recoverLostJobs')->name('fairqueue.lost-jobs.recover');
-    Route::post('/jobs/retry-failed-jobs', 'QueueController@retryFailedJobs')->name('fairqueue.jobs.retry');
-    Route::post('/jobs/purge-failed-jobs', 'QueueController@purgeFailedJobs')->name('fairqueue.jobs.purge');
+    Route::post('/jobs/retry-failed-jobs/{queue?}/{partition?}', 'QueueController@retryFailedJobs')->name('fairqueue.jobs.retry');
+    Route::post('/jobs/purge-failed-jobs/{queue?}/{partition?}', 'QueueController@purgeFailedJobs')->name('fairqueue.jobs.purge');
     Route::post('/queues/{queue}/partitions/{partition}/retry-failed-jobs', 'QueueController@retryPartitionFailedJobs')->name('fairqueue.partition-jobs.retry');
 
 });

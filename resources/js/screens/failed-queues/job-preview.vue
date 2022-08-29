@@ -3,10 +3,16 @@
         <div class="card mt-4" v-if="ready">
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h5>Failed Job Data</h5>
-
                 <a data-toggle="collapse" href="#collapseData" role="button">
                     Collapse
                 </a>
+            </div>
+
+            <div class="card-body">
+                <hr>
+                <div><strong>Queue:</strong> {{ this.$route.params.queue }}</div>
+                <div><strong>Partition:</strong> {{ this.$route.params.partition }}</div>
+                <hr>
             </div>
 
             <div class="card-body code-bg text-white collapse show" id="collapseData">
