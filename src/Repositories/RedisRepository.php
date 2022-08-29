@@ -194,14 +194,20 @@ class RedisRepository implements RepositoryInterface
         $redis->del($key);
     }
 
-    public function retryFailedJobs()
+    public function retryFailedJobs(array $queues = [], array $queue_partitions = [])
     {
         $count = 0;
 
-        $queues = $this->failedQueues();
+        if(!$queues) {
+            $queues = $this->failedQueues();
+        }
 
         foreach ($queues as $queue) {
-            $partitions = $this->failedPartitions($queue);
+            if(!$queue_partitions) {
+                $partitions = $this->failedPartitions($queue);
+            } else {
+                $partitions = $queue_partitions;
+            }
 
             $queueSize = 0;
             foreach ($partitions as $partition) {
@@ -235,14 +241,20 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
-    public function purgeFailedJobs()
+    public function purgeFailedJobs(array $queues = [], array $queue_partitions = [])
     {
         $redis = $this->getConnection();
 
-        $queues = $this->failedQueues();
+        if(!$queues) {
+            $queues = $this->failedQueues();
+        }
 
         foreach ($queues as $queue) {
-            $partitions = $this->failedPartitions($queue);
+            if(!$queue_partitions) {
+                $partitions = $this->failedPartitions($queue);
+            } else {
+                $partitions = $queue_partitions;
+            }
 
             foreach ($partitions as $partition) {
                 $redis->del($this->failedPartitionKey($queue, $partition));

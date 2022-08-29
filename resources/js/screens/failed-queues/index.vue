@@ -17,6 +17,8 @@
                 queues: [],
                 isRetryAllModalVisible: false,
                 isModalVisible: false,
+                selectedQueue: null,
+                selectedPartition: null,
             };
         },
 
@@ -68,37 +70,60 @@
                 this.isModalVisible = false;
                 this.isRetryAllModalVisible = false;
             },
-            showRetryAllModal() {
+            showRetryModal(queue = null, partition = null) {
+                this.selectedQueue = queue;
+                this.selectedPartition = partition;
                 this.isRetryAllModalVisible = true
+                console.log("Queue:", this.selectedQueue);
+                console.log("Partition:", this.selectedPartition);
             },
-            showPurgeAllModal() {
+            showPurgeModal(queue = null, partition = null) {
+                this.selectedQueue = queue;
+                this.selectedPartition = partition;
                 this.isModalVisible = true
             },
-            submitRetryAll() {
+            retryFailedJobs() {
+                console.log("Queue:", this.selectedQueue);
+                console.log("Partition:", this.selectedPartition);
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/jobs/retry-failed-jobs')
+                this.$http.post(this.getUrl('retry-failed-jobs', this.selectedQueue, this.selectedPartition))
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
+                        this.resetSelectedQueue();
                         this.$toasted.show(response.data.count + ' Jobs Returned to The Queue');
                     })
                     .catch(error => {
                         this.saving = false;
                     });
             },
-            submitPurgeAll() {
+            purgeFailedJobs() {
                 this.saving = true;
-                this.$http.post(FairQueue.basePath + '/api/jobs/purge-failed-jobs')
+                this.$http.post(this.getUrl('purge-failed-jobs', this.selectedQueue, this.selectedPartition))
                     .then(response => {
                         this.saving = false;
                         this.closeModal();
-                        this.loadQueues();
+                        this.resetSelectedQueue();
                         this.$toasted.show('Failed Jobs Purged Successfully');
                     })
                     .catch(error => {
                         this.saving = false;
                     });
             },
+            getUrl(action, queue, partition) {
+                let url = FairQueue.basePath + '/api/jobs/' + action
+                if(queue) {
+                    url += '/' + queue;
+                }
+                if(partition) {
+                    url += '/' + partition;
+                }
+                return url;
+            },
+            resetSelectedQueue() {
+                this.selectedQueue = null;
+                this.selectedPartition = null;
+            }
         }
     }
 </script>
@@ -110,8 +135,8 @@
                 <h5>Failed Queues</h5>
 
                 <div>
-                    <button @click="showRetryAllModal()" class="btn btn-primary btn-sm">Retry All</button>
-                    <button @click="showPurgeAllModal()" class="btn btn-warning btn-sm">Purge All</button>
+                    <button @click="showRetryModal()" class="btn btn-primary btn-sm">Retry All</button>
+                    <button @click="showPurgeModal()" class="btn btn-warning btn-sm">Purge All</button>
                 </div>
             </div>
 
@@ -133,6 +158,7 @@
                 <tr>
                     <th>Failed Queue Name</th>
                     <th>Queue Partitions</th>
+                    <th></th>
                 </tr>
                 </thead>
 
@@ -144,6 +170,10 @@
                         </router-link>
                     </td>
                     <td>{{ queue.partitions_count }}</td>
+                    <td class="gen-btn">
+                        <button @click="showRetryModal(queue.queue)" class="btn btn-primary btn-sm">Retry</button>
+                        <button @click="showPurgeModal(queue.queue)" class="btn btn-warning btn-sm">Purge</button>
+                    </td>
                 </tr>
                 </tbody>
             </table>
@@ -153,7 +183,7 @@
             @close="closeModal"
         >
             <template v-slot:header>
-                Purge All
+                Purge {{ selectedQueue ? 'Queue' : 'All' }} Jobs
             </template>
 
             <template v-slot:body>
@@ -161,7 +191,7 @@
             </template>
 
             <template v-slot:footer>
-                <button @click="submitPurgeAll" :disabled="saving" class="btn btn-primary btn-sm">
+                <button @click="purgeFailedJobs" :disabled="saving" class="btn btn-primary btn-sm">
                     <svg v-if="saving" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="icon spin mr-2 fill-text-color">
                         <path d="M12 10a2 2 0 0 1-3.41 1.41A2 2 0 0 1 10 8V0a9.97 9.97 0 0 1 10 10h-8zm7.9 1.41A10 10 0 1 1 8.59.1v2.03a8 8 0 1 0 9.29 9.29h2.02zm-4.07 0a6 6 0 1 1-7.25-7.25v2.1a3.99 3.99 0 0 0-1.4 6.57 4 4 0 0 0 6.56-1.42h2.1z"></path>
                     </svg>
@@ -175,7 +205,7 @@
             @close="closeModal"
         >
             <template v-slot:header>
-                Retry All
+                Retry {{ selectedQueue ? 'Queue' : 'All' }} Jobs
             </template>
 
             <template v-slot:body>
@@ -183,7 +213,7 @@
             </template>
 
             <template v-slot:footer>
-                <button @click="submitRetryAll" :disabled="saving" class="btn btn-primary btn-sm">
+                <button @click="retryFailedJobs" :disabled="saving" class="btn btn-primary btn-sm">
                     <svg v-if="saving" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" class="icon spin mr-2 fill-text-color">
                         <path d="M12 10a2 2 0 0 1-3.41 1.41A2 2 0 0 1 10 8V0a9.97 9.97 0 0 1 10 10h-8zm7.9 1.41A10 10 0 1 1 8.59.1v2.03a8 8 0 1 0 9.29 9.29h2.02zm-4.07 0a6 6 0 1 1-7.25-7.25v2.1a3.99 3.99 0 0 0-1.4 6.57 4 4 0 0 0 6.56-1.42h2.1z"></path>
                     </svg>
