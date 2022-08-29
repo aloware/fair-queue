@@ -33,7 +33,12 @@ class RedisRepository implements RepositoryInterface
 
     public function job($queue, $partition, $index)
     {
-        return $this->jobPrivate($queue, $partition, $index, 'partitionKey');
+        $job = $this->jobPrivate($queue, $partition, $index, 'partitionKey');
+
+        return [
+            'name' => get_class(unserialize($job)),
+            'payload' => $job
+        ];
     }
 
     public function partitionsWithCount($queue)
@@ -127,7 +132,12 @@ class RedisRepository implements RepositoryInterface
 
     public function failedJob($queue, $partition, $index)
     {
-        return $this->jobPrivate($queue, $partition, $index, 'failedPartitionKey');
+        $job = $this->jobPrivate($queue, $partition, $index, 'failedPartitionKey');
+
+        return [
+            'name' => get_class(unserialize($job)),
+            'payload' => $job
+        ];
     }
 
     public function totalFailedJobsCount($queues)

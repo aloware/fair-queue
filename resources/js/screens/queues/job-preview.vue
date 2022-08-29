@@ -12,11 +12,12 @@
                 <hr>
                 <div><strong>Queue:</strong> {{ this.$route.params.queue }}</div>
                 <div><strong>Partition:</strong> {{ this.$route.params.partition }}</div>
+                <div><strong>Job:</strong> {{ job.name }}</div>
                 <hr>
             </div>
 
             <div class="card-body code-bg text-white collapse show" id="collapseData">
-                <vue-json-pretty :data="prettyPrintJob(job)"></vue-json-pretty>
+                <vue-json-pretty :data="prettyPrintJob(job.payload)"></vue-json-pretty>
             </div>
         </div>
     </div>
