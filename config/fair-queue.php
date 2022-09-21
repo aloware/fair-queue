@@ -84,4 +84,28 @@ return [
     | This prefix will add to the FairQueue signal key prefix
     */
     'signal_key_prefix_for_horizon' => env('FAIR_QUEUE_SIGNAL_KEY_PREFIX_FOR_HORIZON', null),
+
+    /*
+    |--------------------------------------------------------------------------
+    | FairQueue Recover Lost Jobs
+    |--------------------------------------------------------------------------
+    |
+    | Tries to recover jobs which have been on in-progress mode for a long time.
+    | You can set recover jobs with a certain age in seconds
+    */
+    'recover_lost_jobs' => [
+        'enabled' => env('FAIR_QUEUE_RECOVER_LOST_JOBS_ENABLED', false),
+        'age' => 3600
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | FairQueue Recover Stuck Jobs
+    |--------------------------------------------------------------------------
+    |
+    | Tries to recover stuck jobs
+    */
+    'recover_stuck_jobs' => [
+        'enabled' => env('FAIR_QUEUE_RECOVER_STUCK_JOBS_ENABLED', false),
+    ],
 ];
