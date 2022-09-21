@@ -61,7 +61,7 @@ class FairQueueServiceProvider extends ServiceProvider
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             if(config('fair-queue.recover_lost_jobs.enabled')) {
                 $age = config('fair-queue.recover_lost_jobs.age', 3600);
-                // recover lost jobs for since `$age` seconds ago
+                // recover lost jobs since `$age` seconds ago
                 $schedule->command(RecoverLostJobs::class, [$age])->hourly();
             }
 
