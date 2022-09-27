@@ -25,6 +25,19 @@ trait RedisKeys
         );
     }
 
+    private function fairSignalKey($queue)
+    {
+        $signal_key_prefix_for_horizon = config('fair-queue.signal_key_prefix_for_horizon');
+        $horizon_prefix = config('horizon.prefix');
+
+        return sprintf(
+            '%s%s:%s[0-9]*',
+            $horizon_prefix,
+            $signal_key_prefix_for_horizon,
+            $queue
+        );
+    }
+
     private function failedPartitionKey($queue, $partition)
     {
         return $this->partitionKey($queue, $partition, '-failed');

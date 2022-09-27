@@ -65,6 +65,10 @@ interface RepositoryInterface
 
     public function getConnection();
 
+    public function countFairSignals($queue);
+
+    public  function countAllJobs($queue);
+
     /**
      * @throws SampleNotFoundException
      */
