@@ -11,9 +11,9 @@
 
             <div class="card-body">
                 <hr>
-                    <div><strong>Queue:</strong> {{ this.$route.params.queue }}</div>
-                    <div><strong>Partition:</strong> {{ this.$route.params.partition }}</div>
-                    <div><strong>Job:</strong> {{ job.name }}</div>
+                <div><strong>Queue:</strong> {{ this.$route.params.queue }}</div>
+                <div><strong>Partition:</strong> {{ this.$route.params.partition }}</div>
+                <div><strong>Job:</strong> {{ job.name }}</div>
                 <hr>
             </div>
 
