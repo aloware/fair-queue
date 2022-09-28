@@ -343,25 +343,45 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
-    public function recoverStuckJobs()
+    public function countFairSignals($queue)
+    {
+        $signals_redis = $this->getSignalsConnection();
+        $pattern = $this->fairSignalKey($queue);
+
+        return $signals_redis->eval(<<<"LUA"
+            return #redis.pcall('keys', '{$pattern}')
+        LUA, 0);
+    }
+
+    public function countAllJobs($queue)
     {
         $redis = $this->getConnection();
+
+        $pattern = $this->queueKey($queue);
+        $keys = $redis->keys($pattern);
+
+        $count = 0;
+        foreach($keys as $key) {
+            $count += $redis->llen($key);
+        }
+        return $count;
+    }
+
+    public function recoverStuckJobs()
+    {
         $queues = $this->queues();
 
         $count = 0;
 
         foreach ($queues as $queue) {
-            $partitions = $this->partitions($queue);
+            $jobs_count = $this->countAllJobs($queue);
+            $signals_count = $this->countFairSignals($queue);
 
-            $queueSize = 0;
-
-            foreach ($partitions as $partition) {
-                $queueSize += $redis->llen($this->partitionKey($queue, $partition));
+            if($jobs_count > $signals_count) {
+                $queue_size = $jobs_count - $signals_count;
+                $count += $queue_size;
+                $this->generateFakeSignals($queue, $queue_size);
             }
-
-            $count += $queueSize;
-
-            $this->generateFakeSignals($queue, $queueSize);
         }
 
         return $count;
@@ -578,6 +598,12 @@ class RedisRepository implements RepositoryInterface
     public function getConnection()
     {
         $database = config('fair-queue.database');
+        return Redis::connection($database);
+    }
+
+    public function getSignalsConnection()
+    {
+        $database = config('fair-queue.signals_database');
         return Redis::connection($database);
     }
 }

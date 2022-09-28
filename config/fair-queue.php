@@ -58,6 +58,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | FairQueue Signal Redis DB
+    |--------------------------------------------------------------------------
+    |
+    | If you have a seperated redis connection for fair-queue signals, you can specify
+    | Redis connection name here
+    */
+    'signals_database'   => env('FAIR_QUEUE_SIGNALS_REDIS_DB', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
     | FairQueue Redis DB
     |--------------------------------------------------------------------------
     |
@@ -65,4 +75,13 @@ return [
     | you can set it here
     */
     'key_prefix' => env('FAIR_QUEUE_KEY_PREFIX', 'fair-queue'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | FairQueue Signal Key Prefix for Horizon
+    |--------------------------------------------------------------------------
+    |
+    | This prefix will add to the FairQueue signal key prefix
+    */
+    'signal_key_prefix_for_horizon' => env('FAIR_QUEUE_SIGNAL_KEY_PREFIX_FOR_HORIZON', null),
 ];

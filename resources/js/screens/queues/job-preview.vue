@@ -1,6 +1,7 @@
 <template>
     <div>
         <div class="card mt-4" v-if="ready">
+            <PageNavigationControls />
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h5>Job Data</h5>
                 <a data-toggle="collapse" href="#collapseData" role="button">
@@ -25,8 +26,10 @@
 
 <script type="text/ecmascript-6">
     import phpunserialize from 'phpunserialize'
+    import PageNavigationControls from '../../components/PageNavigationControls.vue'
 
     export default {
+        components: {PageNavigationControls},
         /**
          * The component's data.
          */

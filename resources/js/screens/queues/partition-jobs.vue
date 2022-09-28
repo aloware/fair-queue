@@ -1,5 +1,8 @@
 <script type="text/ecmascript-6">
+    import PageNavigationControls from '../../components/PageNavigationControls.vue'
+
     export default {
+        components: {PageNavigationControls},
         props: ['type'],
 
         /**
@@ -118,6 +121,7 @@
 <template>
     <div>
         <div class="card">
+            <PageNavigationControls />
             <div class="card-header d-flex align-items-center justify-content-between">
                 <h5>Partition Jobs "{{ this.$route.params.partition }}"</h5>
             </div>
