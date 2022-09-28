@@ -59,10 +59,16 @@ class FairQueueServiceProvider extends ServiceProvider
         $this->registerQueueEvents();
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
-            // recover lost jobs for the last one hour
-            $schedule->command(RecoverLostJobs::class, [3600])->hourly();
-            // recover stuck jobs
-            $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes();
+            if(config('fair-queue.recover_lost_jobs.enabled')) {
+                $age = config('fair-queue.recover_lost_jobs.age', 3600);
+                // recover lost jobs since `$age` seconds ago
+                $schedule->command(RecoverLostJobs::class, [$age])->hourly();
+            }
+
+            if(config('fair-queue.recover_stuck_jobs.enabled')) {
+                // recover stuck jobs
+                $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes();
+            }
             // refresh stats for dashboard
             $schedule->command(RefreshStats::class)->everyMinute();
         });
