@@ -91,34 +91,6 @@ class FairQueueServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the FairQueue Queue Events.
-     *
-     * @return void
-     */
-    protected function registerQueueEvents(): void
-    {
-        Queue::after(function (JobProcessed $event) {
-            $redis = FairQueue::getConnection();
-            $payload = $event->job->payload();
-            if (!isset($payload['data']) || !isset($payload['data']['command'])) {
-                return;
-            }
-            $command = unserialize($payload['data']['command']);
-            if (!$command instanceof FairSignalJob) {
-                return;
-            }
-            $queue = $command->queue;
-            $partition = $command->partition;
-            $past_minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 1);
-            $past_20minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 20);
-            $past_60minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 60);
-            $redis->zadd($past_minute_key, now()->getPreciseTimestamp(3), $payload['id']);
-            $redis->zadd($past_20minute_key, now()->getPreciseTimestamp(3), $payload['id']);
-            $redis->zadd($past_60minute_key, now()->getPreciseTimestamp(3), $payload['id']);
-        });
-    }
-
-    /**
      * Register the FairQueue resources.
      *
      * @return void

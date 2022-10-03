@@ -2,7 +2,9 @@
 
 namespace Aloware\FairQueue;
 
+use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
+use Aloware\FairQueue\Repositories\RedisKeys;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -11,7 +13,7 @@ use Illuminate\Support\Str;
 
 class FairSignalJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable;
+    use Dispatchable, InteractsWithQueue, Queueable, RedisKeys;
 
     public $partition;
 
@@ -63,6 +65,10 @@ class FairSignalJob implements ShouldQueue
             }
 
             $job->handle();
+
+            // Update Fair Queue Stats
+            $this->updateStats($job->uuid);
+
         } catch (\Throwable $e) {
             printf('[%s] %s' . PHP_EOL, get_class($job), $e->getMessage());
 
@@ -170,5 +176,19 @@ class FairSignalJob implements ShouldQueue
         $partitionIndex = random_int(0, count($partitions) - 1);
 
         return $partitions[$partitionIndex];
+    }
+
+    public function updateStats($uuid)
+    {
+        $redis = FairQueue::getConnection();
+        $queue = $this->queue;
+        $partition = $this->partition;
+
+        $past_minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 1);
+        $past_20minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 20);
+        $past_60minute_key = $this->partitionProcessedJobsInPastMinutesKey($queue, $partition, 60);
+        $redis->zadd($past_minute_key, now()->getPreciseTimestamp(3), $uuid);
+        $redis->zadd($past_20minute_key, now()->getPreciseTimestamp(3), $uuid);
+        $redis->zadd($past_60minute_key, now()->getPreciseTimestamp(3), $uuid);
     }
 }
