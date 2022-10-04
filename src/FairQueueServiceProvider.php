@@ -56,7 +56,6 @@ class FairQueueServiceProvider extends ServiceProvider
         $this->registerRoutes();
         $this->registerResources();
         $this->publishAssets();
-        $this->registerQueueEvents();
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule) {
             if(config('fair-queue.recover_lost_jobs.enabled')) {
