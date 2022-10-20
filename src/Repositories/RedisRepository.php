@@ -11,26 +11,53 @@ class RedisRepository implements RepositoryInterface
 {
     use RedisKeys;
 
+    /**
+     * Get all partitions
+     *
+     * @param string $queue
+     *
+     * @return array
+     */
     public function partitions($queue)
     {
         return $this->partitionsPrivate($queue);
     }
 
+    /**
+     * Get all queues
+     *
+     * @return array
+     */
     public function queues()
     {
         return $this->queuesPrivate('queueListPattern', 'extractQueueNameFromPartitionKey');
     }
 
+    /**
+     * Get all queues with their partitions
+     *
+     * @return array
+     */
     public function queuesWithPartitions()
     {
         return $this->queuesWithPartitionsPrivate('queues', 'partitions');
     }
 
+    /**
+     * Get all jobs
+     *
+     * @return array
+     */
     public function jobs($queue, $partition)
     {
         return $this->jobsPrivate($queue, $partition, 'partitionKey');
     }
 
+    /**
+     * Get job Class name and the payload
+     *
+     * @return array
+     */
     public function job($queue, $partition, $index)
     {
         $job = $this->jobPrivate($queue, $partition, $index, 'partitionKey');
@@ -41,6 +68,13 @@ class RedisRepository implements RepositoryInterface
         ];
     }
 
+    /**
+     * Get partitions With number of jobs
+     *
+     * @param string $queue
+     *
+     * @return array
+     */
     public function partitionsWithCount($queue)
     {
         return $this->partitionsWithCountPrivate(
@@ -53,11 +87,25 @@ class RedisRepository implements RepositoryInterface
         );
     }
 
+    /**
+     * Get total jobs of the given queues
+     *
+     * @param array $queues
+     *
+     * @return int
+     */
     public function totalJobsCount($queues)
     {
         return $this->totalJobsCountPrivate($queues, 'partitions', 'partitionKey');
     }
 
+    /**
+     * Get Total Jobs
+     *
+     * @param array $queues
+     *
+     * @return int
+     */
     public function processedJobsInPastMinutes($queues, $minutes)
     {
         $redis = $this->getConnection();
@@ -72,6 +120,14 @@ class RedisRepository implements RepositoryInterface
         return $total;
     }
 
+    /**
+     * Get number of processed jobs of a queue in past minutes
+     *
+     * @param string $queue
+     * @param int $minutes
+     *
+     * @return int
+     */
     public function queueProcessedJobsInPastMinutes($queue, $minutes)
     {
         $redis = $this->getConnection();
@@ -86,6 +142,15 @@ class RedisRepository implements RepositoryInterface
         return $total;
     }
 
+    /**
+     * Get number of processed jobs of a partition in past minutes
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param int $minutes
+     *
+     * @return int
+     */
     public function partitionProcessedJobsInPastMinutes($queue, $partition, $minutes)
     {
         $redis = $this->getConnection();
@@ -94,6 +159,13 @@ class RedisRepository implements RepositoryInterface
         return $redis->zcard($partition_key);
     }
 
+    /**
+     * Get list of failed partitions of a queue
+     *
+     * @param string $queue
+     *
+     * @return array
+     */
     public function failedPartitions($queue)
     {
         return $this->partitionsPrivate(
@@ -103,16 +175,33 @@ class RedisRepository implements RepositoryInterface
         );
     }
 
+    /**
+     * Get list of failed queues
+     *
+     * @return array
+     */
     public function failedQueues()
     {
         return $this->queuesPrivate('failedQueueListPattern', 'extractQueueNameFromFailedPartitionKey');
     }
 
+    /**
+     * Get list of failed queues
+     *
+     * @return array
+     */
     public function failedQueuesWithPartitions()
     {
         return $this->queuesWithPartitionsPrivate('failedQueues', 'failedPartitions');
     }
 
+    /**
+     * Get list of failed partitions with number of jobs
+     *
+     * @param string $queue
+     *
+     * @return array
+     */
     public function failedPartitionsWithCount($queue)
     {
         return $this->partitionsWithCountPrivate(
@@ -125,11 +214,28 @@ class RedisRepository implements RepositoryInterface
         );
     }
 
+    /**
+     * Get list of failed job of a partition
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return array
+     */
     public function failedJobs($queue, $partition)
     {
         return $this->jobsPrivate($queue, $partition, 'failedPartitionKey');
     }
 
+    /**
+     * Get failed job Class name and Payload based on its index
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param int $index
+     *
+     * @return array
+     */
     public function failedJob($queue, $partition, $index)
     {
         $job = $this->jobPrivate($queue, $partition, $index, 'failedPartitionKey');
@@ -140,11 +246,26 @@ class RedisRepository implements RepositoryInterface
         ];
     }
 
+    /**
+     * Get number of failed jobs of given queues
+     *
+     * @param array $queues
+     *
+     * @return int
+     */
     public function totalFailedJobsCount($queues)
     {
         return $this->totalJobsCountPrivate($queues, 'failedPartitions', 'failedPartitionKey');
     }
 
+    /**
+     * Push a job into given queue and partition at the tail of list
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return void
+     */
     public function push($queue, $partition, $job)
     {
         $redis = $this->getConnection();
@@ -154,6 +275,14 @@ class RedisRepository implements RepositoryInterface
         $redis->rpush($partitionKey, $job);
     }
 
+     /**
+     * Push a job into given queue and partition at the head of list
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return void
+     */
     public function lPush($queue, $partition, $job)
     {
         $redis = $this->getConnection();
@@ -163,6 +292,14 @@ class RedisRepository implements RepositoryInterface
         $redis->lpush($partitionKey, $job);
     }
 
+     /**
+     * Push a failed job into given queue and partition at the tail of list
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return void
+     */
     public function pushFailed($queue, $partition, $job)
     {
         $redis = $this->getConnection();
@@ -172,29 +309,66 @@ class RedisRepository implements RepositoryInterface
         $redis->rpush($partitionKey, $job);
     }
 
+    /**
+     * Returns and removes the first element of the list
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return array|null
+     */
     public function pop($queue, $partition)
     {
         return $this->popPrivate($queue, $partition, 'partitionKey');
     }
 
+    /**
+     * Returns and removes the first element of the failed jobs list
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return array|null
+     */
     public function popFailed($queue, $partition)
     {
         return $this->popPrivate($queue, $partition, 'failedPartitionKey');
     }
 
+    /**
+     * Sets a expect of acknowledge
+     *
+     * @param string $connection
+     * @param string $queue
+     * @param string $partition
+     * @param string $jobUuid
+     * @param string $job
+     *
+     * @return void
+     */
     public function expectAcknowledge($connection, $queue, $partition, $jobUuid, $job)
     {
         $redis = $this->getConnection();
 
-        $key             = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
+        $key = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
         $sampleSignalKey = $this->queueSampleSignalKey($queue);
 
         $redis->mset([
-            $key             => $job,
+            $key => $job,
             $sampleSignalKey => serialize([$connection, $queue])
         ]);
     }
 
+    /**
+     * After acknowledge receive lets remove it from the list
+     *
+     * @param string $connection
+     * @param string $queue
+     * @param string $partition
+     * @param string $jobUuid
+     *
+     * @return void
+     */
     public function acknowledge($connection, $queue, $partition, $jobUuid)
     {
         $redis = $this->getConnection();
@@ -204,6 +378,14 @@ class RedisRepository implements RepositoryInterface
         $redis->del($key);
     }
 
+    /**
+     * Retry failed jobs of given queues and partitions
+     *
+     * @param array $queues
+     * @param array $queue_partitions
+     *
+     * @return int
+     */
     public function retryFailedJobs(array $queues = [], array $queue_partitions = [])
     {
         $count = 0;
@@ -234,6 +416,14 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
+    /**
+     * Retry failed jobs of a given partition
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return int
+     */
     public function retryPartitionFailedJobs($queue, $partition)
     {
         $count = 0;
@@ -251,6 +441,14 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
+    /**
+     * Purge failed jobs of given queues and partitions
+     *
+     * @param array $queues
+     * @param array $queue_partitions
+     *
+     * @return void
+     */
     public function purgeFailedJobs(array $queues = [], array $queue_partitions = [])
     {
         $redis = $this->getConnection();
@@ -272,6 +470,13 @@ class RedisRepository implements RepositoryInterface
         }
     }
 
+    /**
+     * Recovers lost jobs since given seconds ago
+     *
+     * @param int $age
+     *
+     * @return int
+     */
     public function recoverLost($age = 300)
     {
         $redis = $this->getConnection();
@@ -308,6 +513,15 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
+    /**
+     * Recovers lost jobs for the given partition since given seconds ago
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param int $age
+     *
+     * @return int
+     */
     public function recoverPartitionLost($queue, $partition, $age = 300)
     {
         $redis = $this->getConnection();
@@ -343,9 +557,8 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
-
     /**
-     * Count Fair Signals
+     * Count Fair Signals of the give queue and partition
      *
      * @param string $queue
      * @param string $partition
@@ -363,7 +576,7 @@ class RedisRepository implements RepositoryInterface
     }
 
     /**
-     * Count All Jobs
+     * Count all jobs of the given queue
      *
      * @param string $queue
      *
@@ -383,6 +596,13 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
+    /**
+     * Count all jobs of the given queue
+     *
+     * @param string $queue
+     *
+     * @return int
+     */
     public function recoverStuckJobs()
     {
         $queues = $this->queues();
@@ -403,8 +623,15 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
-    /**
+     /**
+     * Generates fake signal
+     *
+     * @param string $queue
+     * @param int $count
+     *
      * @throws SampleNotFoundException
+
+     * @return int
      */
     public function generateFakeSignals($queue, $count)
     {
@@ -427,6 +654,15 @@ class RedisRepository implements RepositoryInterface
         }
     }
 
+    /**
+     * Gets name of all queues
+     *
+     * @param string $queueListPatternResolver
+     * @param string $extractQueueNameFromPartitionKeyResolver
+     *
+     *
+     * @return array
+     */
     private function queuesPrivate(
         $queueListPatternResolver = 'queueListPattern',
         $extractQueueNameFromPartitionKeyResolver = 'extractQueueNameFromPartitionKey'
@@ -442,6 +678,14 @@ class RedisRepository implements RepositoryInterface
         return array_values(array_unique($queues));
     }
 
+    /**
+     * Get all queues with their partitions
+     *
+     * @param string $queuesResolver
+     * @param string $partitionsResolver
+     *
+     * @return array
+     */
     private function queuesWithPartitionsPrivate(
         $queuesResolver = 'queues',
         $partitionsResolver = 'partitions'
@@ -465,6 +709,15 @@ class RedisRepository implements RepositoryInterface
         return $queues;
     }
 
+    /**
+     * Get all partitions
+     *
+     * @param string $queue
+     * @param string $queuePartitionListPatternResolver
+     * @param string $extractorResolver
+     *
+     * @return array
+     */
     private function partitionsPrivate(
         $queue,
         $queuePartitionListPatternResolver = 'queuePartitionListPattern',
@@ -481,13 +734,20 @@ class RedisRepository implements RepositoryInterface
         return array_values($partitions);
     }
 
+    /**
+     * Get partitions With number of jobs
+     *
+     * @param string $queue
+     * @param string $queuePartitionListPatternResolver
+     * @param string $extractPartitionNameFromPartitionKeyResolver
+     *
+     * @return array
+     */
     private function partitionsWithCountPrivate(
         $queue,
         $queuePartitionListPatternResolver = 'queuePartitionListPattern',
         $extractPartitionNameFromPartitionKeyResolver = 'extractPartitionNameFromPartitionKey',
-        $partitionKeyResolver = 'partitionKey',
-        $partitionPerSecKeyResolver = 'partitionPerSecKey',
-        $includePartitionPerSecKeyColumn = true
+        $partitionKeyResolver = 'partitionKey'
     ) {
         $redis = $this->getConnection();
 
@@ -522,6 +782,15 @@ class RedisRepository implements RepositoryInterface
         return $partitions;
     }
 
+    /**
+     * Get all jobs
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param string $partitionKeyResolver
+     *
+     * @return array
+     */
     private function jobsPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')
     {
         $redis = $this->getConnection();
@@ -555,6 +824,16 @@ class RedisRepository implements RepositoryInterface
         ];
     }
 
+    /**
+     * Get job
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param string $index
+     * @param string $partitionKeyResolver
+     *
+     * @return array
+    */
     private function jobPrivate($queue, $partition, $index, $partitionKeyResolver = 'partitionKey')
     {
         $redis = $this->getConnection();
@@ -566,6 +845,15 @@ class RedisRepository implements RepositoryInterface
         return $jobs ? $jobs[0] : null;
     }
 
+    /**
+     * Get total jobs of the given queues
+     *
+     * @param array $queues
+     * @param string $partitionsResolver
+     * @param string $partitionKeyResolver
+     *
+     * @return int
+    */
     private function totalJobsCountPrivate(
         $queues,
         $partitionsResolver = 'partitions',
@@ -584,6 +872,15 @@ class RedisRepository implements RepositoryInterface
         return $jobsCount;
     }
 
+    /**
+     * Returns and removes the first element of the list
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param string $partitionKeyResolver
+     *
+     * @return string|null
+    */
     private function popPrivate($queue, $partition, $partitionKeyResolver = 'partitionKey')
     {
         $redis = $this->getConnection();
@@ -611,12 +908,22 @@ class RedisRepository implements RepositoryInterface
         return $redis->lpop($partitionKey);
     }
 
+    /**
+     * Returns Redis Connection
+     *
+     * @return \Illuminate\Redis\Connections\Connection
+    */
     public function getConnection()
     {
         $database = config('fair-queue.database');
         return Redis::connection($database);
     }
 
+    /**
+     * Returns Redis Fair Signal Connection
+     *
+     * @return \Illuminate\Redis\Connections\Connection
+    */
     public function getSignalsConnection()
     {
         $database = config('fair-queue.signals_database');
