@@ -343,16 +343,32 @@ class RedisRepository implements RepositoryInterface
         return $count;
     }
 
-    public function countFairSignals($queue)
+
+    /**
+     * Count Fair Signals
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return int
+     */
+    public function countFairSignals($queue, $partition)
     {
         $signals_redis = $this->getSignalsConnection();
-        $pattern = $this->fairSignalKey($queue);
+        $pattern = $this->fairSignalKey($queue, $partition);
 
         return $signals_redis->eval(<<<"LUA"
             return #redis.pcall('keys', '{$pattern}')
         LUA, 0);
     }
 
+    /**
+     * Count All Jobs
+     *
+     * @param string $queue
+     *
+     * @return int
+     */
     public function countAllJobs($queue)
     {
         $redis = $this->getConnection();
@@ -375,7 +391,7 @@ class RedisRepository implements RepositoryInterface
 
         foreach ($queues as $queue) {
             $jobs_count = $this->countAllJobs($queue);
-            $signals_count = $this->countFairSignals($queue);
+            $signals_count = $this->countFairSignals($queue, '*');
 
             if($jobs_count > $signals_count) {
                 $queue_size = $jobs_count - $signals_count;
