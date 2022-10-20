@@ -65,7 +65,7 @@ interface RepositoryInterface
 
     public function getConnection();
 
-    public function countFairSignals($queue);
+    public function countFairSignals($queue, $partition);
 
     public  function countAllJobs($queue);
 

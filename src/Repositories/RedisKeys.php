@@ -25,16 +25,25 @@ trait RedisKeys
         );
     }
 
-    private function fairSignalKey($queue)
+    /**
+     * Get Fair Signal Redis Key Name
+     *
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return string
+     */
+    private function fairSignalKey($queue, $partition)
     {
         $signal_key_prefix_for_horizon = config('fair-queue.signal_key_prefix_for_horizon');
         $horizon_prefix = config('horizon.prefix');
 
         return sprintf(
-            '%s%s%s:[0-9]*',
+            '%s%s%s:%s:[0-9]*',
             $horizon_prefix,
             $signal_key_prefix_for_horizon,
-            $queue
+            $queue,
+            $partition,
         );
     }
 
