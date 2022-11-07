@@ -52,7 +52,9 @@ class FairSignalJob implements ShouldQueue
         }
 
         try {
-            $job->tries++;
+            if(isset($job->tries)) {
+                $job->tries++;
+            }
 
             if (isset($job->uuid)) {
                 $repository->expectAcknowledge(
@@ -84,7 +86,7 @@ class FairSignalJob implements ShouldQueue
 
             $maxTries = $this->getQueueTries($this->queue);
 
-            if ($job->tries >= $maxTries) {
+            if (!isset($job->tries) || $job->tries >= $maxTries) {
                 $repository->pushFailed($this->queue, $partition, $jobSerialized);
             } else {
                 $repository->lPush($this->queue, $partition, $jobSerialized);
