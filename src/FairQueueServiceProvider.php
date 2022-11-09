@@ -17,8 +17,6 @@ use Aloware\FairQueue\Repositories\RedisKeys;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Queue\Events\JobProcessed;
 
 class FairQueueServiceProvider extends ServiceProvider
 {
@@ -70,7 +68,7 @@ class FairQueueServiceProvider extends ServiceProvider
                 // recover stuck jobs
                 $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes();
                 // remove extra Horizon signals
-                $schedule->command(RemoveExtraHorizonSignals::class)->everyMinute();
+                $schedule->command(RemoveExtraHorizonSignals::class)->everyFiveMinutes();
             }
             // refresh stats for dashboard
             $schedule->command(RefreshStats::class)->everyMinute();
