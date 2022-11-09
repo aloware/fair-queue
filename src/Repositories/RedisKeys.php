@@ -47,6 +47,21 @@ trait RedisKeys
         );
     }
 
+    /**
+     * Get Horizon Signals Redis Key Name
+     *
+     * @param string $queue
+     *
+     * @return string
+     */
+    private function horizonSignalsKey($queue)
+    {
+        return sprintf(
+            'queues:%s',
+            $queue,
+        );
+    }
+
     private function failedPartitionKey($queue, $partition)
     {
         return $this->partitionKey($queue, $partition, '-failed');

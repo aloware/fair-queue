@@ -576,6 +576,28 @@ class RedisRepository implements RepositoryInterface
     }
 
     /**
+     * Count Horizon Signals of the give queue
+     *
+     * @param string $queue
+     *
+     * @return int
+     */
+    public function countHorizonFairSignals($queue)
+    {
+        $signals_redis = $this->getSignalsConnection();
+        $pattern = $this->horizonSignalsKey($queue);
+
+        $keys = $signals_redis->keys($pattern);
+
+        $count = 0;
+        foreach($keys as $key) {
+            $count += $signals_redis->llen($key);
+        }
+
+        return $count;
+    }
+
+    /**
      * Count all jobs of the given queue
      *
      * @param string $queue
@@ -617,6 +639,35 @@ class RedisRepository implements RepositoryInterface
                 $queue_size = $jobs_count - $signals_count;
                 $count += $queue_size;
                 $this->generateFakeSignals($queue, $queue_size);
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Remove extra horizon signals of all queues
+     *
+     * @param string $queue
+     *
+     * @return int
+     */
+    public function removeExtraHorizonSignals()
+    {
+        $signals_redis = $this->getSignalsConnection();
+        $queues = $this->queues();
+
+        $count = 0;
+
+        foreach ($queues as $queue) {
+            $jobs_count = $this->countAllJobs($queue);
+            $horizon_signals_count = $this->countHorizonFairSignals($queue);
+            $pattern = $this->horizonSignalsKey($queue);
+
+            if($horizon_signals_count > $jobs_count) {
+                $extra_signals_count = $horizon_signals_count - $jobs_count;
+                $count += $extra_signals_count;
+                $signals_redis->ltrim($pattern, $extra_signals_count, -1);
             }
         }
 
