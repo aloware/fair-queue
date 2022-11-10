@@ -9,6 +9,7 @@ use Aloware\FairQueue\Commands\RecoverLostJobs;
 use Aloware\FairQueue\Commands\RecoverStuckJobs;
 use Aloware\FairQueue\Commands\RetryFailedJobs;
 use Aloware\FairQueue\Commands\RefreshStats;
+use Aloware\FairQueue\Commands\RemoveExtraHorizonSignals;
 use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Repositories\RedisRepository;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
@@ -16,8 +17,6 @@ use Aloware\FairQueue\Repositories\RedisKeys;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Queue\Events\JobProcessed;
 
 class FairQueueServiceProvider extends ServiceProvider
 {
@@ -44,13 +43,14 @@ class FairQueueServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->commands([
-            Publish::class,
-            RecoverLostJobs::class,
+            RemoveExtraHorizonSignals::class,
             RecoverStuckJobs::class,
-            GenerateSignal::class,
-            RetryFailedJobs::class,
             PurgeFailedJobs::class,
+            RecoverLostJobs::class,
+            RetryFailedJobs::class,
+            GenerateSignal::class,
             RefreshStats::class,
+            Publish::class,
         ]);
 
         $this->registerRoutes();
@@ -67,6 +67,8 @@ class FairQueueServiceProvider extends ServiceProvider
             if(config('fair-queue.recover_stuck_jobs.enabled')) {
                 // recover stuck jobs
                 $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes();
+                // remove extra Horizon signals
+                $schedule->command(RemoveExtraHorizonSignals::class)->everyFiveMinutes();
             }
             // refresh stats for dashboard
             $schedule->command(RefreshStats::class)->everyMinute();
