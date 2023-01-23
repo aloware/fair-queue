@@ -124,6 +124,7 @@
             <tr>
                 <th>Partition Name</th>
                 <th>Number Of Jobs</th>
+                <th>Number Of Signals</th>
                 <th>ETA in Minutes</th>
                 <th>n/m</th>
             </tr>
@@ -146,6 +147,9 @@
                 </td>
                 <td>
                     <span>{{ partition.count }}</span>
+                </td>
+                <td>
+                    <span>{{ partition.signals_count }}</span>
                 </td>
                 <td>
                     <span>{{ partition.eta }}</span>

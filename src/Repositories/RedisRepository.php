@@ -748,6 +748,7 @@ class RedisRepository implements RepositoryInterface
                 'queue' => $queue,
                 'partitions_count' => count($this->$partitionsResolver($queue)),
                 'jobs_count' => $this->totalJobsCount([$queue]),
+                'signals_count' => $this->countFairSignals($queue, '*'),
                 'processed_jobs_count_1_min' => $this->queueProcessedJobsInPastMinutes($queue, 1),
                 'processed_jobs_count_20_min' => $this->queueProcessedJobsInPastMinutes($queue, 20),
             ];
@@ -813,6 +814,7 @@ class RedisRepository implements RepositoryInterface
             $partitionKey = $this->$partitionKeyResolver($queue, $partition);
 
             $count = $redis->llen($partitionKey) ?: 0;
+            $signals_count = $this->countFairSignals($queue, $partition);
             $per_minute = $this->partitionProcessedJobsInPastMinutes($queue, $partition, 1);
             $eta = $per_minute ? ($count / $per_minute) : 0;
 
@@ -820,6 +822,7 @@ class RedisRepository implements RepositoryInterface
                 'per_minute' => $per_minute,
                 'name'  => $partition,
                 'count' => $count,
+                'signals_count' => $signals_count,
                 'eta' => round($eta, 2),
             ];
 

@@ -144,6 +144,7 @@
                     <th>Queue</th>
                     <th>Partitions</th>
                     <th>Jobs</th>
+                    <th>Signals</th>
                     <th>Processed In 1 Minute</th>
                     <th>Processed In 20 Minutes</th>
                     <th></th>
@@ -159,6 +160,7 @@
                     </td>
                     <td>{{ queue.partitions_count }}</td>
                     <td>{{ queue.jobs_count }}</td>
+                    <td>{{ queue.signals_count }}</td>
                     <td>{{ queue.processed_jobs_count_1_min }}</td>
                     <td>{{ queue.processed_jobs_count_20_min }}</td>
                     <td class="gen-btn">
