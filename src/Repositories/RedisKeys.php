@@ -39,7 +39,7 @@ trait RedisKeys
         $horizon_prefix = config('horizon.prefix');
 
         return sprintf(
-            '%s%s%s:%s:[0-9]*',
+            '%s%s%s:%s:*',
             $horizon_prefix,
             $signal_key_prefix_for_horizon,
             $queue,
