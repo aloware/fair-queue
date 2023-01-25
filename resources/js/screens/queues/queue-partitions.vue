@@ -10,6 +10,7 @@
         data() {
             return {
                 ready: false,
+                fetching: false,
                 loadingNewEntries: false,
                 hasNewEntries: false,
                 isModalVisible: false,
@@ -59,6 +60,11 @@
              * Load the partitions of the given queue.
              */
             loadPartitions(queue, starting = 0, refreshing = false) {
+                if(this.fetching) {
+                    return;
+                }
+                this.fetching = true;
+
                 if (!refreshing) {
                     this.ready = false;
                 }
@@ -74,9 +80,11 @@
                         }
 
                         this.ready = true;
+                        this.fetching = false;
                     }).catch( error => {
                         this.$toasted.show('Error: ' + error.response.data.message);
                         this.ready = true;
+                        this.fetching = false;
                     });
             },
 
@@ -124,7 +132,6 @@
             <tr>
                 <th>Partition Name</th>
                 <th>Number Of Jobs</th>
-                <th>Number Of Signals</th>
                 <th>ETA in Minutes</th>
                 <th>n/m</th>
             </tr>
@@ -147,9 +154,6 @@
                 </td>
                 <td>
                     <span>{{ partition.count }}</span>
-                </td>
-                <td>
-                    <span>{{ partition.signals_count }}</span>
                 </td>
                 <td>
                     <span>{{ partition.eta }}</span>
