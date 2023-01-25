@@ -8,6 +8,7 @@
         data() {
             return {
                 ready: false,
+                fetching: false,
                 saving: false,
                 page: 1,
                 perPage: 50,
@@ -46,6 +47,11 @@
              * Load the monitored queues.
              */
             loadQueues(starting = 0, refreshing = false) {
+                if(this.fetching) {
+                    return;
+                }
+                this.fetching = true
+
                 if(!refreshing) {
                     this.ready = false;
                 }
@@ -55,9 +61,11 @@
                         this.queues = response.data;
 
                         this.ready = true;
+                        this.fetching = false;
                     }).catch( error => {
                         this.$toasted.show('Error: ' + error.response.data.message);
-                         this.ready = true;
+                        this.ready = true;
+                        this.fetching = false;
                     });
             },
             /**
@@ -144,7 +152,6 @@
                     <th>Queue</th>
                     <th>Partitions</th>
                     <th>Jobs</th>
-                    <th>Signals</th>
                     <th>Processed In 1 Minute</th>
                     <th>Processed In 20 Minutes</th>
                     <th></th>
@@ -160,7 +167,6 @@
                     </td>
                     <td>{{ queue.partitions_count }}</td>
                     <td>{{ queue.jobs_count }}</td>
-                    <td>{{ queue.signals_count }}</td>
                     <td>{{ queue.processed_jobs_count_1_min }}</td>
                     <td>{{ queue.processed_jobs_count_20_min }}</td>
                     <td class="gen-btn">
