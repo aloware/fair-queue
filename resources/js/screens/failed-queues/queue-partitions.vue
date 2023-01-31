@@ -63,6 +63,11 @@
              * Load the partitions of the given queue.
              */
             loadPartitions(queue, starting = 0, refreshing = false) {
+                if(this.fetching) {
+                    return;
+                }
+                this.fetching = true;
+
                 if (!refreshing) {
                     this.ready = false;
                 }
@@ -78,6 +83,11 @@
                         }
 
                         this.ready = true;
+                        this.fetching = false;
+                    }).catch( error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
+                        this.ready = true;
+                        this.fetching = false;
                     });
             },
             closeModal() {
