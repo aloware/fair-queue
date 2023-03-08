@@ -372,9 +372,13 @@ class RedisRepository implements RepositoryInterface
     public function acknowledge($connection, $queue, $partition, $jobUuid)
     {
         $redis = $this->getConnection();
+        $signals_redis = $this->getSignalsConnection();
+
+        $signal_key = $this->fairSignalKeyByUuid($queue, $partition, $jobUuid);
 
         $key = $this->inProgressJobKey($connection, $queue, $partition, $jobUuid);
 
+        $signals_redis->del($signal_key);
         $redis->del($key);
     }
 

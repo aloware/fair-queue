@@ -48,6 +48,30 @@ trait RedisKeys
     }
 
     /**
+     * Get Fair Signal Redis Key Name By UUID
+     *
+     * @param string $queue
+     * @param string $partition
+     * @param string $uuid
+     *
+     * @return string
+     */
+    private function fairSignalKeyByUuid($queue, $partition, $uuid)
+    {
+        $signal_key_prefix_for_horizon = config('fair-queue.signal_key_prefix_for_horizon');
+        $horizon_prefix = config('horizon.prefix');
+
+        return sprintf(
+            '%s%s%s:%s:%s',
+            $horizon_prefix,
+            $signal_key_prefix_for_horizon,
+            $queue,
+            $partition,
+            $uuid,
+        );
+    }
+
+    /**
      * Get Horizon Signals Redis Key Name
      *
      * @param string $queue
