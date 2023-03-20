@@ -61,17 +61,17 @@ class FairQueueServiceProvider extends ServiceProvider
             if(config('fair-queue.recover_lost_jobs.enabled')) {
                 $age = config('fair-queue.recover_lost_jobs.age', 3600);
                 // recover lost jobs since `$age` seconds ago
-                $schedule->command(RecoverLostJobs::class, [$age])->hourly();
+                $schedule->command(RecoverLostJobs::class, [$age])->hourly()->withoutOverlapping();
             }
 
             if(config('fair-queue.recover_stuck_jobs.enabled')) {
                 // recover stuck jobs
-                $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes();
+                $schedule->command(RecoverStuckJobs::class)->everyFiveMinutes()->withoutOverlapping();
                 // remove extra Horizon signals
-                $schedule->command(RemoveExtraHorizonSignals::class)->everyFiveMinutes();
+                $schedule->command(RemoveExtraHorizonSignals::class)->everyFiveMinutes()->withoutOverlapping();
             }
             // refresh stats for dashboard
-            $schedule->command(RefreshStats::class)->everyMinute();
+            $schedule->command(RefreshStats::class)->everyMinute()->withoutOverlapping();
         });
     }
 
