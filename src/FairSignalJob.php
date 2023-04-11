@@ -182,6 +182,11 @@ class FairSignalJob implements ShouldQueue
 
     public function updateStats($uuid)
     {
+        // if FairQueue stats config is disabled ignore updating stats
+        if(!config('fair-queue.stats.enabled')) {
+            return;
+        }
+
         $redis = FairQueue::getConnection();
         $queue = $this->queue;
         $partition = $this->partition;
