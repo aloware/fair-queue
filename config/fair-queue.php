@@ -108,4 +108,15 @@ return [
     'recover_stuck_jobs' => [
         'enabled' => env('FAIR_QUEUE_RECOVER_STUCK_JOBS_ENABLED', false),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | FairQueue Refresh Stats
+    |--------------------------------------------------------------------------
+    | FairQueue Stats Configurations
+    |
+    */
+    'stats' => [
+        'enabled' => env('FAIR_QUEUE_REFRESH_STATS_ENABLED', true),
+    ],
 ];

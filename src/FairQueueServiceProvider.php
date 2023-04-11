@@ -70,8 +70,10 @@ class FairQueueServiceProvider extends ServiceProvider
                 // remove extra Horizon signals
                 $schedule->command(RemoveExtraHorizonSignals::class)->everyFiveMinutes()->withoutOverlapping();
             }
-            // refresh stats for dashboard
-            $schedule->command(RefreshStats::class)->everyMinute()->withoutOverlapping();
+            if(config('fair-queue.recover_stuck_jobs.enabled')) {
+                // refresh stats for dashboard
+                $schedule->command(RefreshStats::class)->everyMinute()->withoutOverlapping();
+            }
         });
     }
 

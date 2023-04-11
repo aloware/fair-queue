@@ -256,4 +256,27 @@ trait RedisKeys
         $pos = strpos($value, $prefix);
         return substr($value, $pos + strlen($prefix));
     }
+
+    /**
+     * Get keys by given pattern
+     *
+     * @param \Illuminate\Redis\Connections\Connection $redis
+     * @param string $pattern
+     * @param integer $count
+     *
+     * @return array
+     */
+    public function getKeysFromPattern($redis, $pattern, $count = 1000)
+    {
+        $keys = [];
+        $iterator = null;
+
+        while ($keysList = $redis->scan($iterator, ['match' => $pattern, 'count' => $count])) {
+            $iterator = $keysList[0];
+            foreach ($keysList[1] as $key) {
+                $keys[] = $key;
+            }
+        }
+        return $keys;
+    }
 }

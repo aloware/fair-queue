@@ -112,7 +112,7 @@ class RedisRepository implements RepositoryInterface
 
         $total = 0;
         $queue_key = $this->processedJobsInPastMinutesKey($minutes);
-        $keys = $redis->keys($queue_key);
+        $keys = $this->getKeysFromPattern($redis, $queue_key);
         foreach($keys as $key)
         {
             $total += $redis->zcard($key);
@@ -134,7 +134,7 @@ class RedisRepository implements RepositoryInterface
 
         $total = 0;
         $queue_key = $this->queueProcessedJobsInPastMinutesKey($queue, $minutes);
-        $keys = $redis->keys($queue_key);
+        $keys = $this->getKeysFromPattern($redis, $queue_key);
         foreach($keys as $key)
         {
             $total += $redis->zcard($key);
@@ -487,7 +487,7 @@ class RedisRepository implements RepositoryInterface
 
         $pattern = $this->inProgressJobsPattern();
 
-        $keys = $redis->keys($pattern);
+        $keys = $this->getKeysFromPattern($redis, $pattern);
 
         $count = 0;
 
@@ -531,7 +531,7 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $pattern = $this->partitionInProgressJobKey($queue, $partition);
-        $keys = $redis->keys($pattern);
+        $keys = $this->getKeysFromPattern($redis, $pattern);
 
         $count = 0;
 
@@ -591,7 +591,7 @@ class RedisRepository implements RepositoryInterface
         $signals_redis = $this->getSignalsConnection();
         $pattern = $this->horizonSignalsKey($queue);
 
-        $keys = $signals_redis->keys($pattern);
+        $keys = $this->getKeysFromPattern($signals_redis, $pattern);
 
         $count = 0;
         foreach($keys as $key) {
@@ -613,7 +613,7 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $pattern = $this->queueKey($queue);
-        $keys = $redis->keys($pattern);
+        $keys = $this->getKeysFromPattern($redis, $pattern);
 
         $count = 0;
         foreach($keys as $key) {
@@ -724,7 +724,7 @@ class RedisRepository implements RepositoryInterface
     ) {
         $redis = $this->getConnection();
 
-        $keys = $redis->keys($this->$queueListPatternResolver());
+        $keys = $this->getKeysFromPattern($redis, $this->$queueListPatternResolver());
 
         $queues = array_map(function ($key) use ($extractQueueNameFromPartitionKeyResolver) {
             return $this->$extractQueueNameFromPartitionKeyResolver($key);
@@ -780,7 +780,7 @@ class RedisRepository implements RepositoryInterface
     ) {
         $redis = $this->getConnection();
 
-        $keys = $redis->keys($this->$queuePartitionListPatternResolver($queue));
+        $keys = $this->getKeysFromPattern($redis, $this->$queuePartitionListPatternResolver($queue), 15000);
 
         $partitions = array_map(function ($item) use ($extractorResolver) {
             return $this->$extractorResolver($item);
@@ -808,7 +808,7 @@ class RedisRepository implements RepositoryInterface
 
         $pattern = $this->$queuePartitionListPatternResolver($queue);
 
-        $keys = $redis->keys($pattern);
+        $keys = $this->getKeysFromPattern($redis, $pattern);
         $partitions = [];
 
         foreach ($keys as $key) {
