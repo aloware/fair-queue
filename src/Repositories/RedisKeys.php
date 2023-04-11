@@ -266,7 +266,7 @@ trait RedisKeys
      *
      * @return array
      */
-    public function getKeysFromPattern($redis, $pattern, $count = 1000)
+    public function getKeysFromPattern($redis, $pattern, $count = 15000)
     {
         $keys = [];
         $iterator = null;
