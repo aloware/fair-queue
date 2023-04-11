@@ -50,9 +50,9 @@ class RefreshStats extends Command
     {
         $redis = FairQueue::getConnection();
 
-        $this->refreshKeys($redis, $redis->keys($this->recentProcesedJobsPattern(1)), 1);
-        $this->refreshKeys($redis, $redis->keys($this->recentProcesedJobsPattern(20)), 20);
-        $this->refreshKeys($redis, $redis->keys($this->recentProcesedJobsPattern(60)), 60);
+        $this->refreshKeys($redis, $this->getKeysFromPattern($redis, $this->recentProcesedJobsPattern(1)), 1);
+        $this->refreshKeys($redis, $this->getKeysFromPattern($redis, $this->recentProcesedJobsPattern(20)), 20);
+        $this->refreshKeys($redis, $this->getKeysFromPattern($redis, $this->recentProcesedJobsPattern(60)), 60);
 
         $this->info('Fair-Queue Stats Refreshed Successfully');
     }
