@@ -50,7 +50,7 @@
                 if(this.fetching) {
                     return;
                 }
-                this.fetching = true
+                this.fetching = true;
 
                 if(!refreshing) {
                     this.ready = false;

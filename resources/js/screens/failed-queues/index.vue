@@ -9,6 +9,7 @@
             return {
                 ready: false,
                 saving: false,
+                fetching: false,
                 page: 1,
                 perPage: 50,
                 hasNewEntries: false,
@@ -45,6 +46,11 @@
              * Load the monitored queues.
              */
             loadQueues(starting = 0, refreshing = false) {
+                if(this.fetching) {
+                    return;
+                }
+                this.fetching = true;
+
                 if(!refreshing) {
                     this.ready = false;
                 }
@@ -54,6 +60,11 @@
                         this.queues = response.data;
 
                         this.ready = true;
+                        this.fetching = false;
+                    }).catch( error => {
+                        this.$toasted.show('Error: ' + error.response.data.message);
+                        this.ready = true;
+                        this.fetching = false;
                     });
             },
             /**

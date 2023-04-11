@@ -15,6 +15,7 @@
                 workers: [],
                 workload: [],
                 ready: false,
+                fetching: false,
             };
         },
 
@@ -55,6 +56,10 @@
              * Load the general stats.
              */
             loadStats() {
+                if(this.fetching) {
+                    return;
+                }
+                this.fetching = true;
                 return this.$http.get(FairQueue.basePath + '/api/stats')
                     .then(response => {
                         this.stats = response.data;
@@ -63,9 +68,11 @@
                             this.stats.max_wait_time = _.values(response.data.wait)[0];
                             this.stats.max_wait_queue = _.keys(response.data.wait)[0].split(':')[1];
                         }
+                        this.fetching = false;
                     }).catch( error => {
                         this.$toasted.show('Error: ' + error.response.data.message);
                         this.ready = true;
+                        this.fetching = false;
                     });
             },
 
