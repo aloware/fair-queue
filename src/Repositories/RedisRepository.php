@@ -780,7 +780,7 @@ class RedisRepository implements RepositoryInterface
     ) {
         $redis = $this->getConnection();
 
-        $keys = $this->getKeysFromPattern($redis, $this->$queuePartitionListPatternResolver($queue), 15000);
+        $keys = $this->getKeysFromPattern($redis, $this->$queuePartitionListPatternResolver($queue));
 
         $partitions = array_map(function ($item) use ($extractorResolver) {
             return $this->$extractorResolver($item);
