@@ -981,6 +981,8 @@ class RedisRepository implements RepositoryInterface
             ->exists($partitionKey)
             ->exec();
 
+        // if processed job is the last job of the partition,
+        // going to remove partition name from queue partitions list
         if($result[1] === 0 && $result[0] !== false) {
             $this->removePatitionNameFromList($queue, $partition);
         }
