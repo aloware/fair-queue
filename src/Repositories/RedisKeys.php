@@ -159,7 +159,7 @@ trait RedisKeys
     private function queuePartitionsListKeyName($queue)
     {
         return sprintf(
-            '%s:%s-partitions',
+            '%s-partitions-%s',
             $this->fairQueueKeyPrefix(),
             $queue
         );
