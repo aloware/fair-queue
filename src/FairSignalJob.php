@@ -34,7 +34,7 @@ class FairSignalJob implements ShouldQueue
             /** @var RepositoryInterface $repository */
             $repository = app(RepositoryInterface::class);
 
-            list($partition, $jobSerialized) = $this->pop($repository, 'pop', 'partitions');
+            list($partition, $jobSerialized) = $this->pop($repository, 'pop', 'getRandomPartitionName');
 
 //            if (is_null($jobSerialized)) {
 //                list($partition, $jobSerialized) = $this->pop($repository, 'popFailed', 'failedPartitions');
@@ -136,7 +136,7 @@ class FairSignalJob implements ShouldQueue
         return $this;
     }
 
-    private function pop($repository, $popMethod = 'pop', $partitionsMethod = 'partitions')
+    private function pop($repository, $popMethod = 'pop', $partitionsMethod = 'getRandomPartitionName')
     {
         $partition = $this->selectPartition($repository, $partitionsMethod);
 
@@ -167,17 +167,9 @@ class FairSignalJob implements ShouldQueue
         return [$partition, $jobSerialized];
     }
 
-    private function selectPartition($repository, $partitionsMethod = 'partitions')
+    private function selectPartition($repository, $partitionsMethod = 'getRandomPartitionName')
     {
-        $partitions = $repository->$partitionsMethod($this->queue);
-
-        if (empty($partitions)) {
-            return null;
-        }
-
-        $partitionIndex = random_int(0, count($partitions) - 1);
-
-        return $partitions[$partitionIndex];
+        return $repository->$partitionsMethod($this->queue);
     }
 
     public function updateStats($uuid)
