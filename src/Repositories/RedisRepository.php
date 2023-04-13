@@ -271,8 +271,10 @@ class RedisRepository implements RepositoryInterface
         $redis = $this->getConnection();
 
         $partitionKey = $this->partitionKey($queue, $partition);
+        $listKeyName = $this->queuePartitionsListKeyName($queue);
 
         $redis->rpush($partitionKey, $job);
+        $redis->sadd($listKeyName, $partition);
     }
 
      /**
@@ -790,6 +792,21 @@ class RedisRepository implements RepositoryInterface
     }
 
     /**
+     * Get random partition name of a queue
+     *
+     * @param string $queue
+     *
+     * @return string
+     */
+    public function getRandomPartitionName($queue)
+    {
+        $redis = $this->getConnection();
+        $listKeyName = $this->queuePartitionsListKeyName($queue);
+
+        return $redis->srandmember($listKeyName);
+    }
+
+    /**
      * Get partitions With number of jobs
      *
      * @param string $queue
@@ -959,7 +976,30 @@ class RedisRepository implements RepositoryInterface
             $redis->decrBy($processedKey, $persec);
         }
 
-        return $redis->lpop($partitionKey);
+        $result = $redis->multi()
+            ->lpop($partitionKey)
+            ->exists($partitionKey)
+            ->exec();
+
+        if($result[1] === 0 && $result[0] !== false) {
+            $this->removePatitionNameFromList($queue, $partition);
+        }
+
+        return $result[0];
+    }
+
+    /**
+     * Removes partition name from queue partitions list
+     * @param string $queue
+     * @param string $partition
+     *
+     * @return void
+    */
+    public function removePatitionNameFromList($queue, $partition)
+    {
+        $listKeyName = $this->queuePartitionsListKeyName($queue);
+        $redis = $this->getConnection();
+        $redis->srem($listKeyName, $partition);
     }
 
     /**
