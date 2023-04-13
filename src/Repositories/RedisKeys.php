@@ -156,6 +156,15 @@ trait RedisKeys
         );
     }
 
+    private function queuePartitionsListKeyName($queue)
+    {
+        return sprintf(
+            '%s-partitions-%s',
+            $this->fairQueueKeyPrefix(),
+            $queue
+        );
+    }
+
     private function queuePartitionListPattern($queue)
     {
         return sprintf(
