@@ -705,7 +705,6 @@ class RedisRepository implements RepositoryInterface
     ) {
         $keys = $this->getKeysFromPattern($this->redis, $this->$queueListPatternResolver());
 
-
         $queues = array_map(function ($key) use ($extractQueueNameFromPartitionKeyResolver) {
             return $this->$extractQueueNameFromPartitionKeyResolver($key);
         }, $keys);
