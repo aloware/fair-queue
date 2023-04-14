@@ -29,7 +29,7 @@ class RedisRepository implements RepositoryInterface
      */
     public function partitions($queue)
     {
-        return $this->partitionsPrivate($queue);
+        return $this->getPartitionNames($queue);
     }
 
     /**
@@ -705,6 +705,7 @@ class RedisRepository implements RepositoryInterface
     ) {
         $keys = $this->getKeysFromPattern($this->redis, $this->$queueListPatternResolver());
 
+
         $queues = array_map(function ($key) use ($extractQueueNameFromPartitionKeyResolver) {
             return $this->$extractQueueNameFromPartitionKeyResolver($key);
         }, $keys);
@@ -764,6 +765,20 @@ class RedisRepository implements RepositoryInterface
         }, $keys);
 
         return array_values($partitions);
+    }
+
+    /**
+     * Get partition names of a queue
+     *
+     * @param string $queue
+     *
+     * @return string
+     */
+    public function getPartitionNames($queue)
+    {
+        $listKeyName = $this->queuePartitionsListKeyName($queue);
+
+        return $this->redis->smembers($listKeyName);
     }
 
     /**
