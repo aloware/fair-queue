@@ -29,7 +29,7 @@ class RedisRepository implements RepositoryInterface
      */
     public function partitions($queue)
     {
-        return $this->partitionsPrivate($queue);
+        return $this->getPartitionNames($queue);
     }
 
     /**
@@ -211,9 +211,7 @@ class RedisRepository implements RepositoryInterface
             $queue,
             'failedPartitionListPattern',
             'extractPartitionNameFromFailedPartitionKey',
-            'failedPartitionKey',
-            'failedPartitionPerSecKey',
-            false
+            'failedPartitionKey'
         );
     }
 
@@ -767,6 +765,20 @@ class RedisRepository implements RepositoryInterface
     }
 
     /**
+     * Get partition names of a queue
+     *
+     * @param string $queue
+     *
+     * @return string
+     */
+    public function getPartitionNames($queue)
+    {
+        $listKeyName = $this->queuePartitionsListKeyName($queue);
+
+        return $this->redis->smembers($listKeyName);
+    }
+
+    /**
      * Get random partition name of a queue
      *
      * @param string $queue
@@ -924,22 +936,9 @@ class RedisRepository implements RepositoryInterface
         $partitionKey = $this->$partitionKeyResolver($queue, $partition);
 
         $processedKey = $this->partitionProcessedCountJobKey($queue, $partition);
-        $partitionPerSecKey = $this->partitionPerSecKey($queue, $partition);
 
         $this->redis->incr($processedKey);
         $this->redis->expire($processedKey, 3);
-
-        $now = time();
-        list ($lastAccess, $lastPersec) = explode(',', $this->redis->get($partitionPerSecKey) ?? ($now - 1) . ',0');
-
-        if ($now - $lastAccess >= 1) {
-            $persec = max($this->redis->get($processedKey) ?? 0, 0);
-
-            $data = $now . ',' . max($persec, $persec - $lastPersec);
-            $this->redis->set($partitionPerSecKey, $data, 'EX', 3);
-
-            $this->redis->decrBy($processedKey, $persec);
-        }
 
         $result = $this->redis->multi()
             ->lpop($partitionKey)
