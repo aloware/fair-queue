@@ -2,10 +2,15 @@
 
 namespace Aloware\FairQueue;
 
+use Aloware\FairQueue\Events\FairJobFailed;
+use Aloware\FairQueue\Events\FairJobProcessed;
+use Aloware\FairQueue\Events\FairJobProcessing;
+use Aloware\FairQueue\Events\FairJobQueuing;
 use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Aloware\FairQueue\Repositories\RedisKeys;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -66,12 +71,19 @@ class FairSignalJob implements ShouldQueue
                 );
             }
 
+            event(new FairJobProcessing($job));
+
             $job->handle();
+
+            event(new FairJobProcessed($job));
 
             // Update Fair Queue Stats
             $this->updateStats($job->uuid);
 
         } catch (\Throwable $e) {
+
+            event(new FairJobFailed($job, $e));
+
             printf('[%s] %s' . PHP_EOL, get_class($job), $e->getMessage());
 
             // this will be retried later from failed job partitions
@@ -120,6 +132,8 @@ class FairSignalJob implements ShouldQueue
 
     public function addToPartition()
     {
+        event(new FairJobQueuing($this->originalJob));
+
         /** @var RepositoryInterface $repository */
         $repository = app(RepositoryInterface::class);
 
