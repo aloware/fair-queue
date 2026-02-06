@@ -10,7 +10,6 @@ use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Aloware\FairQueue\Repositories\RedisKeys;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -50,14 +49,16 @@ class FairSignalJob implements ShouldQueue
                 return;
             }
 
-            $job = unserialize($jobSerialized);
+            $data = unserialize($jobSerialized);
         } catch (\Throwable $exception) {
             dump($exception);
             throw $exception;
         }
 
+        $job = $data instanceof FairQueueRedisJob ? $data->job : $data;
+
         try {
-            if(isset($job->tries)) {
+            if (isset($job->tries)) {
                 $job->tries++;
             }
 
@@ -71,11 +72,11 @@ class FairSignalJob implements ShouldQueue
                 );
             }
 
-            event(new FairJobProcessing($job));
+            event(new FairJobProcessing($data));
 
             $job->handle();
 
-            event(new FairJobProcessed($job));
+            event(new FairJobProcessed($data));
 
             // Update Fair Queue Stats
             $this->updateStats($job->uuid);
@@ -132,12 +133,14 @@ class FairSignalJob implements ShouldQueue
 
     public function addToPartition()
     {
-        event(new FairJobQueuing($this->originalJob));
+        $job = new FairQueueRedisJob($this->originalJob);
+
+        event(new FairJobQueuing($job));
 
         /** @var RepositoryInterface $repository */
         $repository = app(RepositoryInterface::class);
 
-        $repository->push($this->queue, $this->partition, serialize($this->originalJob));
+        $repository->push($this->queue, $this->partition, serialize($job));
 
         // avoid unnecessary size allocation
         $this->originalJob = null;
