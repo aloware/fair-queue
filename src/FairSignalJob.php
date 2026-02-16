@@ -2,6 +2,10 @@
 
 namespace Aloware\FairQueue;
 
+use Aloware\FairQueue\Events\FairJobFailed;
+use Aloware\FairQueue\Events\FairJobProcessed;
+use Aloware\FairQueue\Events\FairJobProcessing;
+use Aloware\FairQueue\Events\FairJobQueuing;
 use Aloware\FairQueue\Facades\FairQueue;
 use Aloware\FairQueue\Interfaces\RepositoryInterface;
 use Aloware\FairQueue\Repositories\RedisKeys;
@@ -45,14 +49,16 @@ class FairSignalJob implements ShouldQueue
                 return;
             }
 
-            $job = unserialize($jobSerialized);
+            $data = unserialize($jobSerialized);
         } catch (\Throwable $exception) {
             dump($exception);
             throw $exception;
         }
 
+        $job = $data instanceof FairQueueRedisJob ? $data->job : $data;
+
         try {
-            if(isset($job->tries)) {
+            if (isset($job->tries)) {
                 $job->tries++;
             }
 
@@ -66,12 +72,19 @@ class FairSignalJob implements ShouldQueue
                 );
             }
 
+            event(new FairJobProcessing($data));
+
             $job->handle();
+
+            event(new FairJobProcessed($data));
 
             // Update Fair Queue Stats
             $this->updateStats($job->uuid);
 
         } catch (\Throwable $e) {
+
+            event(new FairJobFailed($job, $e));
+
             printf('[%s] %s' . PHP_EOL, get_class($job), $e->getMessage());
 
             // this will be retried later from failed job partitions
@@ -120,10 +133,14 @@ class FairSignalJob implements ShouldQueue
 
     public function addToPartition()
     {
+        $job = new FairQueueRedisJob($this->originalJob);
+
+        event(new FairJobQueuing($job));
+
         /** @var RepositoryInterface $repository */
         $repository = app(RepositoryInterface::class);
 
-        $repository->push($this->queue, $this->partition, serialize($this->originalJob));
+        $repository->push($this->queue, $this->partition, serialize($job));
 
         // avoid unnecessary size allocation
         $this->originalJob = null;
